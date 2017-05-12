@@ -35,28 +35,28 @@ import java.util.Objects;
  */
 public class EventBus {
 
-    private final Subject<Object, Object> subject = new SerializedSubject<>(PublishSubject.create());
+  private final Subject<Object, Object> subject = new SerializedSubject<>(PublishSubject.create());
 
-    /**
-     * Returns observable providing elements of the specified {@code eventType}.
-     *
-     * @param eventType the event type class.
-     * @param <T> the actual class type generic.
-     * @return the observable providing events.
-     */
-    @SuppressWarnings("unchecked")
-    public <T> Observable<T> observe(Class<T> eventType) {
-        Objects.requireNonNull(eventType);
-        return (Observable<T>) subject.filter(event -> event.getClass().equals(eventType));
-    }
+  /**
+   * Returns observable providing elements of the specified {@code eventType}.
+   *
+   * @param eventType the event type class.
+   * @param <T>       the actual class type generic.
+   * @return the observable providing events.
+   */
+  @SuppressWarnings("unchecked")
+  public <T> Observable<T> observe(Class<T> eventType) {
+    Objects.requireNonNull(eventType);
+    return (Observable<T>) subject.filter(event -> event.getClass().equals(eventType));
+  }
 
-    /**
-     * Posts event on the event bus.
-     *
-     * @param event the event.
-     */
-    public void post(Object event) {
-        subject.onNext(Objects.requireNonNull(event));
-    }
+  /**
+   * Posts event on the event bus.
+   *
+   * @param event the event.
+   */
+  public void post(Object event) {
+    subject.onNext(Objects.requireNonNull(event));
+  }
 
 }
