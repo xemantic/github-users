@@ -7,6 +7,10 @@
   <groupId>com.xemantic.github-users</groupId>
   <artifactId>github-users</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <modules>
+    <module>github-users-shared</module>
+    <module>github-users-logic</module>
+  </modules>
   <packaging>pom</packaging>
 
   <properties>
@@ -16,6 +20,11 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>github-users-shared</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>javax.inject</groupId>
         <artifactId>javax.inject</artifactId>
