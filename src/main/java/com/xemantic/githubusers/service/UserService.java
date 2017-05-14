@@ -31,6 +31,6 @@ import rx.Single;
  */
 public interface UserService {
 
-	Single<SearchResult> find(String query, int page, int perPage);
+  Single<SearchResult> find(String query, int page, int perPage);
 
 }
