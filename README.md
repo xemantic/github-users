@@ -92,7 +92,8 @@ RxJava is a crucial component of this solution and supports:
 
 ## EventBus
 
-The singleton EventBus allows indirect communication of the presenters
+The singleton [EventBus](src/main/java/com/xemantic/githubusers/eventbus/EventBus.java)
+allows indirect communication of the presenters
 resolving traditional issue of direct coupling and component nesting in the UI code.
 
     UserQueryPresenter -- UserQueryEvent -----> +----------+
@@ -102,9 +103,27 @@ resolving traditional issue of direct coupling and component nesting in the UI c
 Any other component might subscribe to EventBus in the frontend implementation
 to receive `UserSelectedEvent` and redirect view to GitHub profile in platform-specific way.
 
+Here is an example usage of the `EventBus`:
+
+```java
+eventBus.observe(StatusUpdateEvent.class) // returns Observable
+    .subscribeOn(renderingScheuler)
+    .subscribe(event -> view.displayStatus(event.getStatus()));
+```
+```java
+eventBus.post(new StatusUpdateEvent("OK"));
+```
+
+Note: the `EventBus` and `EventTracker` utility from this projects will
+be extracted to separate library in the future.
+
 ## Testing
 
 By following MVP principles all the views are prepared in the way they can be mocked and
 assumptions can be made against their state in the unit tests. Ready presenters are
 coming with full test coverage and test cases can be transpiled as well to be run again on
-the target platform.
+the target platform. See example
+[UserPresenterTest](src/test/java/com/xemantic/githubusers/presenter/UserPresenterTest.java).
+
+## Service Access Layer
+
