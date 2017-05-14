@@ -152,8 +152,7 @@ When implementing these entities various methods might be used like
 Only interfaces to be implemented here
 * [UserQueryView](src/main/java/com/xemantic/githubusers/view/UserQueryView.java) - represents textual input where the query is provided
 * [UserListView](src/main/java/com/xemantic/githubusers/view/UserListView.java)
-* [UserView](src/main/java/com/xemantic/githubusers/view/UserView.java)
-- single element in the list.
+* [UserView](src/main/java/com/xemantic/githubusers/view/UserView.java) - single element in the list.
 
 ## Presenter
 
