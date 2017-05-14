@@ -39,7 +39,7 @@ public class EventTracker {
 
   private final Map<Class<?>, List<Object>> eventMap = new HashMap<>();
 
-  private List<Subscription> subscriptions;
+  private List<Subscription> subscriptions = Collections.emptyList();
 
   /**
    * Creates event tracker instance tracking given {@code eventTypes}.
