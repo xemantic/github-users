@@ -68,7 +68,7 @@ public class UserPresenterTest {
   }
 
   @Test
-  public void onSelected_view_shouldPostUserSelectedEvent() {
+  public void onUserSelected_view_shouldPostUserSelectedEvent() {
     // given
     EventBus eventBus = new EventBus();
     EventTracker eventTracker = new EventTracker(UserSelectedEvent.class);
