@@ -21,6 +21,7 @@
 
 package com.xemantic.githubusers.view;
 
+import com.xemantic.githubusers.event.Trigger;
 import rx.Observable;
 
 /**
@@ -32,7 +33,9 @@ public interface UserListView {
 
   void add(UserView userView);
 
-  Observable<Void> observeLoadMore();
+  void clear();
+
+  Observable<Trigger> observeLoadMore();
 
   void enableLoadMore(boolean enabled);
 

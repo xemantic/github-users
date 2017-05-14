@@ -21,6 +21,7 @@
 
 package com.xemantic.githubusers.view;
 
+import com.xemantic.githubusers.event.Trigger;
 import rx.Observable;
 
 /**
@@ -32,6 +33,6 @@ public interface UserView {
 
   void displayLogin(String login);
 
-  Observable<Void> observeSelection();
+  Observable<Trigger> observeSelection();
 
 }
