@@ -129,7 +129,7 @@ Only 3 special event types were defined for this app:
 ### Service
 
 Is provided exclusively by interfaces [UserSearchService](src/main/java/com/xemantic/githubusers/service/UserService.java)
-which returns `Observable` of [SearchResult](src/main/java/com/xemantic/githubusers/model/SearchResult.java)
+which returns `Observable` (technically `Single`) of [SearchResult](src/main/java/com/xemantic/githubusers/model/SearchResult.java)
 holding also the list of [User](src/main/java/com/xemantic/githubusers/model/User.java)s.
 
 Services can be implemented using:
