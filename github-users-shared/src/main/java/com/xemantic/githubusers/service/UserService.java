@@ -29,7 +29,7 @@ import rx.Single;
  *
  * @author morisil
  */
-public interface UserSearchService {
+public interface UserService {
 
 	Single<SearchResult> find(String query, int page, int perPage);
 
