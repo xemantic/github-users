@@ -59,8 +59,10 @@ For the platform specific code see:
 * [github-users-android](https://github.com/xemantic/github-users-android)
 * [github-users-ios](https://github.com/xemantic/github-users-ios)
 
-Technically its a library containing Java code which will be transpiled either
-to JavaScript or to Objective-C code for Web and iOS platform respectively. In case of
+Technically it is a library containing Java code which will be transpiled either
+to JavaScript ([GWT](http://www.gwtproject.org/)) or to
+Objective-C ([J2ObjC ](https://developers.google.com/j2objc/)
+code for Web and iOS platform respectively. In case of
 Android platform the Java code can be used directly.
 
 ## Dependencies
@@ -74,7 +76,7 @@ Only minimal set of Java 8 classes is used plus:
 * [hamcrest](http://hamcrest.org/JavaHamcrest/) - Matchers that can be combined to create flexible expressions of intent 
 
 These popular dependencies will either have emulation on all the platforms or
-transpile to the native code.
+be transpiled to the native code.
 
 ## Model-View-Presenter
 
