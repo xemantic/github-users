@@ -90,7 +90,7 @@ RxJava is a crucial component of this solution and supports:
 * handling of asynchronous responses from remote web services
 * abstracting the way how UI events are streamed to the presenter logic
 
-## EventBus
+## EventBus and events
 
 The singleton [EventBus](src/main/java/com/xemantic/githubusers/eventbus/EventBus.java)
 allows indirect communication of the presenters
@@ -117,6 +117,58 @@ eventBus.post(new StatusUpdateEvent("OK"));
 Note: the `EventBus` and `EventTracker` utility from this projects will
 be extracted to separate library in the future.
 
+Only 3 special event types were defined for this app:
+* [Trigger](src/main/java/com/xemantic/githubusers/event/Trigger.java)
+- user internally for payload-less signals coming from `Observables` 
+* [UserQueryEvent](src/main/java/com/xemantic/githubusers/event/UserQueryEvent.java)
+* [UserSelectedEvent](src/main/java/com/xemantic/githubusers/event/UserSelectedEvent.java)
+
+## Service Access Layer
+
+### Service
+
+Is provided exclusively by interfaces [UserSearchService](src/main/java/com/xemantic/githubusers/service/UserService.java)
+which returns `Observable` of [SearchResult](src/main/java/com/xemantic/githubusers/model/SearchResult.java)
+holding also the list of [User](src/main/java/com/xemantic/githubusers/model/User.java)s.
+
+Services can be implemented using:
+
+* [Retrofit + RxJava](http://square.github.io/retrofit/) on Android
+* [AutoREST for GWT](https://github.com/intendia-oss/autorest)
+
+### Model
+
+The structure of `SearchResult` interface reflects
+[JSON structure of GitHub API response](https://developer.github.com/v3/search/#search-users).
+
+When implementing these entities various methods might be used like
+
+* GSON/jackson json parser for android
+* `@JsInterop` annotations for GWT
+
+## View
+
+Only interfaces to be implemented here
+* [UserQueryView](src/main/java/com/xemantic/githubusers/view/UserQueryView.java)
+- represents textual input where the query is provided
+* [UserListView](src/main/java/com/xemantic/githubusers/view/UserListView.java)
+* [UserView](src/main/java/com/xemantic/githubusers/view/UserView.java)
+- single element in the list.
+
+## Presenter
+
+The only part of the code which is not provided as interfaces.
+Each view is accompanied with respective presenter.
+
+* [UserQueryPresenter](src/main/java/com/xemantic/githubusers/presenter/UserQueryPresenter.java)
+* [UserListPresenter](src/main/java/com/xemantic/githubusers/presenter/UserListPresenter.java)
+(the most complex one)
+* [UserViewPresenter](src/main/java/com/xemantic/githubusers/presenter/UserPresenter.java)
+
+Expectations for these presenters are visible in their
+[test cases](src/test/java/com/xemantic/githubusers/presenter)
+which account for most code in this project.
+
 ## Testing
 
 By following MVP principles all the views are prepared in the way they can be mocked and
@@ -125,5 +177,4 @@ coming with full test coverage and test cases can be transpiled as well to be ru
 the target platform. See example
 [UserPresenterTest](src/test/java/com/xemantic/githubusers/presenter/UserPresenterTest.java).
 
-## Service Access Layer
 
