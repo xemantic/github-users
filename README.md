@@ -97,7 +97,7 @@ resolving traditional issue of direct coupling and component nesting in the UI c
     UserListPresenter <-- UserQueryEvent ------ | EventBus |
     UserPresenter ------- UserSelectedEvent --> +----------+
 
-Any other component might subscribe to EventBus in the fronted implementation
+Any other component might subscribe to EventBus in the frontend implementation
 to receive `UserSelectedEvent` and redirect view to GitHub profile in platform-specific way.
 
 ## Testing
