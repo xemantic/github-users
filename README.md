@@ -4,6 +4,10 @@ Lists GitHub users. Minimal app demonstrating cross-platform development
 (Web, Android, iOS) on top of Java to JavaScript and Java to Objective-C
 [transpilers](https://en.wikipedia.org/wiki/Source-to-source_compiler).
 
+# Build status
+
+![Travis Build](https://api.travis-ci.org/xemantic/github-users.svg?branch=master)
+
 # Demo
 
 Please rather take a look at frontend flavors:
