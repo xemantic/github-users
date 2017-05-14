@@ -61,7 +61,7 @@ For the platform specific code see:
 
 Technically it is a library containing Java code which will be transpiled either
 to JavaScript ([GWT](http://www.gwtproject.org/)) or to
-Objective-C ([J2ObjC ](https://developers.google.com/j2objc/)
+Objective-C ([J2ObjC](https://developers.google.com/j2objc/))
 code for Web and iOS platform respectively. In case of
 Android platform the Java code can be used directly.
 
@@ -120,8 +120,7 @@ Note: the `EventBus` and `EventTracker` utility from this projects will
 be extracted to separate library in the future.
 
 Only 3 special event types were defined for this app:
-* [Trigger](src/main/java/com/xemantic/githubusers/event/Trigger.java)
-- user internally for payload-less signals coming from `Observables` 
+* [Trigger](src/main/java/com/xemantic/githubusers/event/Trigger.java) - used internally for payload-less signals coming from `Observables` 
 * [UserQueryEvent](src/main/java/com/xemantic/githubusers/event/UserQueryEvent.java)
 * [UserSelectedEvent](src/main/java/com/xemantic/githubusers/event/UserSelectedEvent.java)
 
