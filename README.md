@@ -2,9 +2,10 @@
 
 # About github-users
 
-Lists GitHub users. Minimal app demonstrating cross-platform development
-(Web, Android, iOS) on top of Java to JavaScript and Java to Objective-C
-[transpilers](https://en.wikipedia.org/wiki/Source-to-source_compiler).
+Lists GitHub users. Minimal app demonstrating cross-platform app development
+(Web, Android, iOS) where core logic is shared and
+[transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler)
+from Java to JavaScript and Objective-C.
 
 # Demo
 
@@ -26,11 +27,23 @@ It's significant achievement when taking into account:
 * the same features release for all the platforms
 * and the time-to-market for new value is shorter
 
-Just to name a few.
-Unlike in other cross-platform development methodologies, here UI developers are given full
-control over look and feel of their applications. I also believe that such an approach,
-abstracting application presentation logic from specific platform, brings much better overall
-architecture which pays off in the future.
+Just to name a few. Usually cross-platform development tools fall into these categories:
+
+* abstraction over native UI components and IO operations (specialized API
+accessible from any possible programming language which is later either interpreted
+or compiled for specific platform)
+* HTML+CSS forced as UI on mobile 
+
+But there is a third way, where only presentation logic code is shared and UI rendering
+and IO stays native. Where iOS, Web and Android developers can customize the app in every
+detail.
+
+This approach seems to be the most demanding one in terms of software architecture. Common business
+logic cannot operate on technical terms. Mouse click or touch event are becoming
+stream of semantically defined user intents. HTTP request to remote services are becoming
+streams of domain data. But I believe it is worth it. Abstracting app logic from specific
+platform brings much better overall architecture which pays off in the future when
+the application grows.
 
 As there is no blueprint from Google on how to build applications like Google Inbox, I decided
 to use my whole experience to "reverse engineer" possible approach and provide such a minimal project.
@@ -82,7 +95,8 @@ be transpiled to the native code.
 
 Basically view is dumb and can be mocked while presenter has testable logic.
 
-https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter
+See [Model-View-Presenter article](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter)
+article on Wikipedia.
 
 ## Reactive paradigm
 
@@ -176,4 +190,8 @@ coming with full test coverage and test cases can be transpiled as well to be ru
 the target platform. See example
 [UserPresenterTest](src/test/java/com/xemantic/githubusers/presenter/UserPresenterTest.java).
 
+# User Experience design
+
+The [Material Design](https://material.io/guidelines/) will be used on all the platforms
+with help of [Material Components](https://material.io/components/).
 
