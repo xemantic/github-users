@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.view;
+package com.xemantic.githubusers.logic.view;
 
 import rx.Observable;
 

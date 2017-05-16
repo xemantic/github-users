@@ -19,31 +19,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.presenter;
+package com.xemantic.githubusers.logic.presenter;
 
-import com.xemantic.githubusers.event.UserQueryEvent;
-import com.xemantic.githubusers.eventbus.EventBus;
-import com.xemantic.githubusers.view.UserQueryView;
+import com.xemantic.githubusers.logic.event.UserSelectedEvent;
+import com.xemantic.githubusers.logic.eventbus.EventBus;
+import com.xemantic.githubusers.logic.model.User;
+import com.xemantic.githubusers.logic.view.UserView;
 
 import javax.inject.Inject;
 
 /**
- * Presenter of the {@link UserQueryView}.
+ * Presenter of the {@link UserView}.
  *
  * @author morisil
  */
-public class UserQueryPresenter {
+public class UserPresenter {
 
   private final EventBus eventBus;
 
   @Inject
-  public UserQueryPresenter(EventBus eventBus) {
+  public UserPresenter(EventBus eventBus) {
     this.eventBus = eventBus;
   }
 
-  public void start(UserQueryView view) {
-    view.observeQueryInput()
-        .subscribe(query -> eventBus.post(new UserQueryEvent(query)));
+  void start(User user, UserView view) {
+    view.observeSelection().subscribe(s -> eventBus.post(new UserSelectedEvent(user)));
+    view.displayLogin(user.getLogin());
   }
 
 }

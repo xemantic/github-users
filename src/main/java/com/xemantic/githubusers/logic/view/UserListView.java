@@ -19,20 +19,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.view;
+package com.xemantic.githubusers.logic.view;
 
-import com.xemantic.githubusers.event.Trigger;
+import com.xemantic.githubusers.logic.event.Trigger;
 import rx.Observable;
 
 /**
- * Displays single user entry.
+ * Displays list of {@link UserView}s.
  *
  * @author morisil
  */
-public interface UserView {
+public interface UserListView {
 
-  void displayLogin(String login);
+  void add(UserView userView);
 
-  Observable<Trigger> observeSelection();
+  void clear();
+
+  Observable<Trigger> observeLoadMore();
+
+  void enableLoadMore(boolean enabled);
 
 }

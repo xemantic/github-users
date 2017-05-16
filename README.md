@@ -113,7 +113,7 @@ RxJava is a crucial component of this solution and supports:
 
 ## EventBus and events
 
-The singleton [EventBus](src/main/java/com/xemantic/githubusers/eventbus/EventBus.java)
+The singleton [EventBus](src/main/java/com/xemantic/githubusers/logic/eventbus/EventBus.java)
 allows indirect communication of the presenters
 resolving traditional issue of direct coupling and component nesting in the UI code.
 
@@ -139,17 +139,17 @@ Note: the `EventBus` and `EventTracker` utility from this projects will
 be extracted to separate library in the future.
 
 Only 3 special event types were defined for this app:
-* [Trigger](src/main/java/com/xemantic/githubusers/event/Trigger.java) - used internally for payload-less signals coming from `Observables` 
-* [UserQueryEvent](src/main/java/com/xemantic/githubusers/event/UserQueryEvent.java)
-* [UserSelectedEvent](src/main/java/com/xemantic/githubusers/event/UserSelectedEvent.java)
+* [Trigger](src/main/java/com/xemantic/githubusers/logic/event/Trigger.java) - used internally for payload-less signals coming from `Observables` 
+* [UserQueryEvent](src/main/java/com/xemantic/githubusers/logic/event/UserQueryEvent.java)
+* [UserSelectedEvent](src/main/java/com/xemantic/githubusers/logic/event/UserSelectedEvent.java)
 
 ## Service Access Layer
 
 ### Service
 
-Is provided exclusively by interfaces [UserSearchService](src/main/java/com/xemantic/githubusers/service/UserService.java)
-which returns `Observable` (technically `Single`) of [SearchResult](src/main/java/com/xemantic/githubusers/model/SearchResult.java)
-holding also the list of [User](src/main/java/com/xemantic/githubusers/model/User.java)s.
+Is provided exclusively by interfaces [UserSearchService](src/main/java/com/xemantic/githubusers/logic/service/UserService.java)
+which returns `Observable` (technically `Single`) of [SearchResult](src/main/java/com/xemantic/githubusers/logic/model/SearchResult.java)
+holding also the list of [User](src/main/java/com/xemantic/githubusers/logic/model/User.java)s.
 
 Services can be implemented using:
 
@@ -169,19 +169,19 @@ When implementing these entities various methods might be used like
 ## View
 
 Only interfaces to be implemented here
-* [UserQueryView](src/main/java/com/xemantic/githubusers/view/UserQueryView.java) - represents textual input where the query is provided
-* [UserListView](src/main/java/com/xemantic/githubusers/view/UserListView.java)
-* [UserView](src/main/java/com/xemantic/githubusers/view/UserView.java) - single element in the list.
+* [UserQueryView](src/main/java/com/xemantic/githubusers/logic/view/UserQueryView.java) - represents textual input where the query is provided
+* [UserListView](src/main/java/com/xemantic/githubusers/logic/view/UserListView.java)
+* [UserView](src/main/java/com/xemantic/githubusers/logic/view/UserView.java) - single element in the list.
 
 ## Presenter
 
 The only part of the code which is not provided as interfaces.
 Each view is accompanied with respective presenter.
 
-* [UserQueryPresenter](src/main/java/com/xemantic/githubusers/presenter/UserQueryPresenter.java)
-* [UserListPresenter](src/main/java/com/xemantic/githubusers/presenter/UserListPresenter.java)
+* [UserQueryPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserQueryPresenter.java)
+* [UserListPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserListPresenter.java)
 (the most complex one)
-* [UserViewPresenter](src/main/java/com/xemantic/githubusers/presenter/UserPresenter.java)
+* [UserViewPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserPresenter.java)
 
 Expectations for these presenters are visible in their
 [test cases](src/test/java/com/xemantic/githubusers/presenter)
