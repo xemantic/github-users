@@ -24,7 +24,7 @@ It's significant achievement when taking into account:
 * reduced Total Cost of Ownership with only one code base to maintain
 * naturally synchronized development process across all the teams
 (backend, presentation logic, frontend, mobile)
-* the same features release for all the platforms
+* the same features released for all the platforms
 * and the time-to-market for new value is shorter
 
 Just to name a few. Usually cross-platform development tools fall into these categories:
