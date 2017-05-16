@@ -19,12 +19,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.presenter;
+package com.xemantic.githubusers.logic.presenter;
 
-import com.xemantic.githubusers.event.UserQueryEvent;
-import com.xemantic.githubusers.eventbus.EventBus;
-import com.xemantic.githubusers.eventbus.EventTracker;
-import com.xemantic.githubusers.view.UserQueryView;
+import com.xemantic.githubusers.logic.event.UserQueryEvent;
+import com.xemantic.githubusers.logic.eventbus.EventBus;
+import com.xemantic.githubusers.logic.eventbus.EventTracker;
+import com.xemantic.githubusers.logic.view.UserQueryView;
 import org.junit.Test;
 import rx.Observable;
 import rx.subjects.PublishSubject;

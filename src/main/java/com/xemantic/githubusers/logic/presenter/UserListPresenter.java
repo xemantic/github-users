@@ -19,15 +19,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.presenter;
+package com.xemantic.githubusers.logic.presenter;
 
-import com.xemantic.githubusers.event.Trigger;
-import com.xemantic.githubusers.event.UserQueryEvent;
-import com.xemantic.githubusers.eventbus.EventBus;
-import com.xemantic.githubusers.model.User;
-import com.xemantic.githubusers.service.UserService;
-import com.xemantic.githubusers.view.UserListView;
-import com.xemantic.githubusers.view.UserView;
+import com.xemantic.githubusers.logic.event.Trigger;
+import com.xemantic.githubusers.logic.event.UserQueryEvent;
+import com.xemantic.githubusers.logic.eventbus.EventBus;
+import com.xemantic.githubusers.logic.model.User;
+import com.xemantic.githubusers.logic.service.UserService;
+import com.xemantic.githubusers.logic.view.UserListView;
+import com.xemantic.githubusers.logic.view.UserView;
 import rx.Observable;
 import rx.Scheduler;
 import rx.Subscription;

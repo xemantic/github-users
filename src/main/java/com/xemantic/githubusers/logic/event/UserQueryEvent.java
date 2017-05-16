@@ -18,18 +18,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.model;
+
+package com.xemantic.githubusers.logic.event;
+
+import java.util.Objects;
 
 /**
- * User JSON representation according to
- * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
+ * Event generated when new user query is requested.
  *
  * @author morisil
  */
-public interface User {
+public class UserQueryEvent {
 
-  String getLogin();
+  private final String query;
 
-  String getAvatarUrl();
+  public UserQueryEvent(String query) {
+    this.query = Objects.requireNonNull(query);
+  }
+
+  public String getQuery() {
+    return query;
+  }
 
 }

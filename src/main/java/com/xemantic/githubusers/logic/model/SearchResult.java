@@ -18,25 +18,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package com.xemantic.githubusers.logic.model;
 
-package com.xemantic.githubusers.view;
-
-import com.xemantic.githubusers.event.Trigger;
-import rx.Observable;
+import java.util.List;
 
 /**
- * Displays list of {@link UserView}s.
+ * User search result JSON representation according to
+ * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
  *
  * @author morisil
  */
-public interface UserListView {
+public interface SearchResult {
 
-  void add(UserView userView);
+  int getTotalCount();
 
-  void clear();
+  boolean isIncompleteResult();
 
-  Observable<Trigger> observeLoadMore();
-
-  void enableLoadMore(boolean enabled);
+  List<User> getItems();
 
 }

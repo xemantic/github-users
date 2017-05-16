@@ -19,25 +19,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.event;
+package com.xemantic.githubusers.logic.event;
 
-import java.util.Objects;
+import rx.Observable;
 
 /**
- * Event generated when new user query is requested.
+ * Trigger carries no payload but represents signal.
+ * Will be used as the type of signaling {@link Observable}s
  *
  * @author morisil
  */
-public class UserQueryEvent {
+public final class Trigger {
 
-  private final String query;
+  public static final Trigger INSTANCE = new Trigger();
 
-  public UserQueryEvent(String query) {
-    this.query = Objects.requireNonNull(query);
-  }
-
-  public String getQuery() {
-    return query;
-  }
+  private Trigger() { /* no instantiation */ }
 
 }

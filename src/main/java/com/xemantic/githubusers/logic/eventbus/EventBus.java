@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.eventbus;
+package com.xemantic.githubusers.logic.eventbus;
 
 import rx.Observable;
 import rx.subjects.PublishSubject;

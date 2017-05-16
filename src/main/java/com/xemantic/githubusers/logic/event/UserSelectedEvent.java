@@ -19,20 +19,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.event;
+package com.xemantic.githubusers.logic.event;
 
-import rx.Observable;
+import com.xemantic.githubusers.logic.model.User;
+
+import java.util.Objects;
 
 /**
- * Trigger carries no payload but represents signal.
- * Will be used as the type of signaling {@link Observable}s
- *
- * @author morisil
+ * Event generated when user is selected.
  */
-public final class Trigger {
+public class UserSelectedEvent {
 
-  public static final Trigger INSTANCE = new Trigger();
+    private final User user;
 
-  private Trigger() { /* no instantiation */ }
+    public UserSelectedEvent(User user) {
+        this.user = Objects.requireNonNull(user);
+    }
+
+    public User getUser() {
+        return user;
+    }
 
 }

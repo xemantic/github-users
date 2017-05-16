@@ -18,22 +18,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.model;
+package com.xemantic.githubusers.logic.service;
 
-import java.util.List;
+import com.xemantic.githubusers.logic.model.SearchResult;
+import rx.Single;
 
 /**
- * User search result JSON representation according to
+ * User search service according to
  * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
  *
  * @author morisil
  */
-public interface SearchResult {
+public interface UserService {
 
-  int getTotalCount();
-
-  boolean isIncompleteResult();
-
-  List<User> getItems();
+  Single<SearchResult> find(String query, int page, int perPage);
 
 }
