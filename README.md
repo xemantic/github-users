@@ -29,19 +29,24 @@ It's significant achievement when taking into account:
 
 Just to name a few. Usually cross-platform development tools fall into these categories:
 
-* abstraction over native UI components and IO operations (specialized API
-accessible from any possible programming language which is later either interpreted
-or compiled for specific platform)
-* HTML+CSS forced as UI on mobile 
+* abstraction over native UI components and IO operations - specialized API
+accessible from programming language of choice which is either interpreted
+or compiled for specific platform (possibilities are limited by what the API has to offer)
+* the use of HTML+CSS on all platforms (discarding the possible advantages offered by
+native solutions on mobile devices) 
 
 But there is a third way, where only presentation logic code is shared and UI rendering
 and IO stays native. Where iOS, Web and Android developers can customize the app in every
 detail.
 
 This approach seems to be the most demanding one in terms of software architecture. Common business
-logic cannot operate on technical terms. Mouse click or touch event are becoming
-stream of semantically defined user intents. HTTP request to remote services are becoming
-streams of domain data. But I believe it is worth it. Abstracting app logic from specific
+logic cannot longer be expressed in purely technical terms of low-level events, requests,
+responses or threads. Mouse clicks or touch events are becoming a
+stream of semantically defined user intents like "select element". HTTP requests to remote services
+are becoming a streams of domain data being provided asynchronously in any moment.
+Concurrency is handled by declaring *what* to do leaving *when*
+and *how* to reactive framework. Such an approach, even though more challenging conceptually,
+is worth the effort. Abstracting app logic from specific
 platform brings much better overall architecture which pays off in the future when
 the application grows.
 
