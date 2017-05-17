@@ -1,7 +1,8 @@
 /*
  * github-users - lists GitHub users. Minimal app demonstrating
- * cross-platform development (Web, Android, iOS) on top of
- * Java to JavaScript and Java to Objective-C transpilers.
+ * cross-platform app development (Web, Android, iOS) where core
+ * logic is shared and transpiled from Java to JavaScript and
+ * Objective-C. This project delivers core application logic.
  *
  * Copyright (C) 2017  Kazimierz Pogoda
  *
