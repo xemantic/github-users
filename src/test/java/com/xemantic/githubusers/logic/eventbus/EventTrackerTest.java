@@ -281,7 +281,7 @@ public class EventTrackerTest {
     tracker.attach(eventBus);
 
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("No event of type java.lang.String was posted to DefaultEventBus");
+    thrown.expectMessage("No event of type java.lang.String was posted to EventBus");
 
     // when
     tracker.assertOnlyOne(String.class);
@@ -299,7 +299,7 @@ public class EventTrackerTest {
     eventBus.post("bar");
 
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("More than 1 event of type java.lang.String was posted to DefaultEventBus: " + 2);
+    thrown.expectMessage("More than 1 event of type java.lang.String was posted to EventBus: " + 2);
 
     // when
     tracker.assertOnlyOne(String.class);
