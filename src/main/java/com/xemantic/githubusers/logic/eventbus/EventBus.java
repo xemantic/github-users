@@ -23,20 +23,13 @@
 package com.xemantic.githubusers.logic.eventbus;
 
 import rx.Observable;
-import rx.subjects.PublishSubject;
-import rx.subjects.SerializedSubject;
-import rx.subjects.Subject;
-
-import java.util.Objects;
 
 /**
- * Minimal Event Bus based on RxJava.
+ * Event Bus.
  *
  * @author morisil
  */
-public class EventBus {
-
-  private final Subject<Object, Object> subject = new SerializedSubject<>(PublishSubject.create());
+public interface EventBus {
 
   /**
    * Returns observable providing elements of the specified {@code eventType}.
@@ -45,19 +38,13 @@ public class EventBus {
    * @param <T>       the actual class type generic.
    * @return the observable providing events.
    */
-  @SuppressWarnings("unchecked")
-  public <T> Observable<T> observe(Class<T> eventType) {
-    Objects.requireNonNull(eventType);
-    return (Observable<T>) subject.filter(event -> event.getClass().equals(eventType));
-  }
+  <T> Observable<T> observe(Class<T> eventType);
 
   /**
    * Posts event on the event bus.
    *
    * @param event the event.
    */
-  public void post(Object event) {
-    subject.onNext(Objects.requireNonNull(event));
-  }
+  void post(Object event);
 
 }

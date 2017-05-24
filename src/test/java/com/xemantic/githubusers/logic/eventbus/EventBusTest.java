@@ -27,18 +27,20 @@ import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
 
 /**
- * Test of the {@link EventBus}.
+ * Abstract test of the {@link EventBus}.
+ * Classes implementing {@link EventBusTest} should
+ * implement {@link #newEventBus()} method.
  *
  * @author morisil
  */
-public class EventBusTest {
+public abstract class EventBusTest {
 
   // happy path
   @Test
   public void post_1event_shouldReceiveIt() {
     // given
     TestSubscriber<EventA> subscriber = TestSubscriber.create();
-    EventBus bus = new EventBus();
+    EventBus bus = newEventBus();
     bus.observe(EventA.class)
         .subscribeOn(Schedulers.immediate())
         .subscribe(subscriber);
@@ -56,7 +58,7 @@ public class EventBusTest {
   public void post_1eventWhenSubscribedAnd1WhenNot_shouldReceiveOnly1event() {
     // given
     TestSubscriber<EventA> subscriber = TestSubscriber.create();
-    EventBus bus = new EventBus();
+    EventBus bus = newEventBus();
     bus.observe(EventA.class)
         .subscribeOn(Schedulers.immediate())
         .subscribe(subscriber);
@@ -78,7 +80,7 @@ public class EventBusTest {
     // given
     TestSubscriber<EventA> subscriberA = TestSubscriber.create();
     TestSubscriber<EventB> subscriberB = TestSubscriber.create();
-    EventBus bus = new EventBus();
+    EventBus bus = newEventBus();
     bus.observe(EventA.class)
         .subscribeOn(Schedulers.immediate())
         .subscribe(subscriberA);
@@ -106,7 +108,7 @@ public class EventBusTest {
   @Test(expected = NullPointerException.class)
   public void post_nullEvent_shouldThrowException() {
     // given
-    EventBus bus = new EventBus();
+    EventBus bus = newEventBus();
 
     // when
     bus.post(null);
@@ -117,7 +119,7 @@ public class EventBusTest {
   @Test
   public void post_objectAsEventAndNoSubscriptions_shouldDoNothing() {
     // given
-    EventBus bus = new EventBus();
+    EventBus bus = newEventBus();
     Object event = new Object();
 
     // when
@@ -129,7 +131,7 @@ public class EventBusTest {
   @Test(expected = NullPointerException.class)
   public void observe_nullEventType_throwException() {
     // given
-    EventBus bus = new EventBus();
+    EventBus bus = newEventBus();
 
     // when
     bus.observe(null);
@@ -138,6 +140,7 @@ public class EventBusTest {
   }
 
 
+  protected abstract EventBus newEventBus();
 
   // test events
   private static class EventA { /* no implementation */ }

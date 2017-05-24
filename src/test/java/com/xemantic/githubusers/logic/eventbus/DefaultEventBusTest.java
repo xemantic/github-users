@@ -19,20 +19,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.logic.model;
+
+package com.xemantic.githubusers.logic.eventbus;
 
 /**
- * User JSON representation according to
- * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
+ * Test of the {@link DefaultEventBus}.
  *
  * @author morisil
  */
-public interface User {
+public class DefaultEventBusTest extends EventBusTest {
 
-  String getLogin();
-
-  String getAvatarUrl();
-
-  String getHtmlUrl();
+  @Override
+  protected EventBus newEventBus() {
+    return new DefaultEventBus();
+  }
 
 }

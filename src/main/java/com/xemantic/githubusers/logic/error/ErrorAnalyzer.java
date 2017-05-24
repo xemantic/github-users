@@ -19,20 +19,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.logic.model;
+
+package com.xemantic.githubusers.logic.error;
+
+import rx.Observable;
 
 /**
- * User JSON representation according to
- * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
+ * Analyzes {@link Throwable}s occurring in the streams of observed data.
+ * The result can be used to resubscribe to {@link Observable}
+ * after recoverable error like temporal connection error.
  *
  * @author morisil
+ * @see Observable#retry()
  */
-public interface User {
+public interface ErrorAnalyzer {
 
-  String getLogin();
-
-  String getAvatarUrl();
-
-  String getHtmlUrl();
+  /**
+   * Tells if supplied {@code throwable} is non-critical and therefore if action
+   * can possibly succeed on the next try. Examples: rate limit quota reached,
+   * connectivity problem, etc.
+   *
+   * @param throwable the error to analyze.
+   * @return the {@code true} if recoverable, {@code false} otherwise.
+   */
+  boolean isRecoverable(Throwable throwable);
 
 }

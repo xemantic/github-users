@@ -23,6 +23,7 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
+import com.xemantic.githubusers.logic.eventbus.DefaultEventBus;
 import com.xemantic.githubusers.logic.eventbus.EventBus;
 import com.xemantic.githubusers.logic.eventbus.EventTracker;
 import com.xemantic.githubusers.logic.view.UserQueryView;
@@ -37,9 +38,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Test of the {@link UserQueryPresenter}.
@@ -51,7 +51,7 @@ public class UserQueryPresenterTest {
   @Test
   public void start_view_shouldOnlyBindToView() {
     // given
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     EventTracker tracker = new EventTracker(UserQueryEvent.class);
     tracker.attach(eventBus);
 
@@ -64,15 +64,15 @@ public class UserQueryPresenterTest {
     presenter.start(view);
 
     // then
-    verify(view).observeQueryInput();
-    verifyNoMoreInteractions(view);
+    then(view).should().observeQueryInput();
+    then(view).shouldHaveNoMoreInteractions();
     assertThat(tracker.getEvents(UserQueryEvent.class), empty());
   }
 
   @Test
   public void onUserQuery_queryString_shouldPostEventWithQueryString() {
     // given
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     EventTracker tracker = new EventTracker(UserQueryEvent.class);
     tracker.attach(eventBus);
 
@@ -93,7 +93,7 @@ public class UserQueryPresenterTest {
   @Test
   public void onUserQuery_2subsequentQueriesProvided_shouldPost2EventsWithQueryString() {
     // given
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     EventTracker tracker = new EventTracker(UserQueryEvent.class);
     tracker.attach(eventBus);
 

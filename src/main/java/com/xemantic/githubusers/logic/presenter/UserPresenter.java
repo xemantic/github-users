@@ -44,8 +44,9 @@ public class UserPresenter {
   }
 
   void start(User user, UserView view) {
-    view.observeSelection().subscribe(s -> eventBus.post(new UserSelectedEvent(user)));
-    view.displayLogin(user.getLogin());
+    view.observeSelection()
+        .subscribe(s -> eventBus.post(new UserSelectedEvent(user)));
+    view.displayUser(user);
   }
 
 }

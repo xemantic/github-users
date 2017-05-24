@@ -22,9 +22,10 @@
 
 package com.xemantic.githubusers.logic.presenter;
 
-import com.xemantic.githubusers.logic.event.Trigger;
-import com.xemantic.githubusers.logic.event.UserSelectedEvent;
+import com.xemantic.githubusers.logic.eventbus.DefaultEventBus;
 import com.xemantic.githubusers.logic.eventbus.EventBus;
+import com.xemantic.githubusers.logic.eventbus.Trigger;
+import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.githubusers.logic.eventbus.EventTracker;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.view.UserView;
@@ -35,9 +36,8 @@ import rx.subjects.PublishSubject;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Test of the {@link UserPresenter}.
@@ -49,7 +49,7 @@ public class UserPresenterTest {
   @Test
   public void start_user_shouldDisplayUser() {
     // given
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
 
     User user = mock(User.class);
     given(user.getLogin()).willReturn("foo");
@@ -63,15 +63,15 @@ public class UserPresenterTest {
     presenter.start(user, view);
 
     // then
-    verify(view).displayLogin("foo");
-    verify(view).observeSelection();
-    verifyNoMoreInteractions(view);
+    then(view).should().displayUser(user);
+    then(view).should().observeSelection();
+    then(view).shouldHaveNoMoreInteractions();
   }
 
   @Test
   public void onUserSelected_view_shouldPostUserSelectedEvent() {
     // given
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     EventTracker eventTracker = new EventTracker(UserSelectedEvent.class);
     eventTracker.attach(eventBus);
 

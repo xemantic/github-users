@@ -19,20 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.logic.model;
 
 /**
- * User JSON representation according to
- * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
+ * Error handling logic.
+ * <p>
+ *   Note: This package contains general logic which will be moved to the separate library.
+ * </p>
  *
  * @author morisil
  */
-public interface User {
-
-  String getLogin();
-
-  String getAvatarUrl();
-
-  String getHtmlUrl();
-
-}
+package com.xemantic.githubusers.logic.error;
