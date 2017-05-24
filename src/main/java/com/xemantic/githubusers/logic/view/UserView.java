@@ -22,7 +22,8 @@
 
 package com.xemantic.githubusers.logic.view;
 
-import com.xemantic.githubusers.logic.event.Trigger;
+import com.xemantic.githubusers.logic.eventbus.Trigger;
+import com.xemantic.githubusers.logic.model.User;
 import rx.Observable;
 
 /**
@@ -32,7 +33,7 @@ import rx.Observable;
  */
 public interface UserView {
 
-  void displayLogin(String login);
+  void displayUser(User user);
 
   Observable<Trigger> observeSelection();
 

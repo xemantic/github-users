@@ -41,12 +41,15 @@ import static org.junit.Assert.assertThat;
  */
 public class EventTrackerTest {
 
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
   // happy path
   @Test
   public void getEvents_eventsInOrder_shouldReturnOrderedEventLists() {
     // given
     EventTracker tracker = new EventTracker(String.class, Integer.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("foo");
     eventBus.post(42);
@@ -71,7 +74,7 @@ public class EventTrackerTest {
   public void assertOnlyOne_andOnlyOneEventOfThisTypeWasPosted_shouldReturnEvent() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("foo");
 
@@ -198,8 +201,8 @@ public class EventTrackerTest {
   public void attach_reattachDifferentEventBus_shouldStopListeningToTheFirstOne() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus1 = new EventBus();
-    EventBus eventBus2 = new EventBus();
+    EventBus eventBus1 = new DefaultEventBus();
+    EventBus eventBus2 = new DefaultEventBus();
     tracker.attach(eventBus1);
     eventBus1.post("foo");
     eventBus2.post("bar");
@@ -217,7 +220,7 @@ public class EventTrackerTest {
   public void detach_somethingAlreadySent_shouldStopListeningToEventsPostedLater() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("foo");
 
@@ -233,7 +236,7 @@ public class EventTrackerTest {
   public void getEvents_untrackedEventType_shouldReturnEmptyList() {
     // given
     EventTracker tracker = new EventTracker(Integer.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("bar");
 
@@ -248,7 +251,7 @@ public class EventTrackerTest {
   public void getEvents_tryToAttackStateByModifyingResult_shouldThrowException() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("foo");
     List<String> events = tracker.getEvents(String.class);
@@ -274,11 +277,11 @@ public class EventTrackerTest {
   public void assertOnlyOne_nothingWasPosted_shouldThrowError() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
 
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("No event of type java.lang.String was posted to EventBus");
+    thrown.expectMessage("No event of type java.lang.String was posted to DefaultEventBus");
 
     // when
     tracker.assertOnlyOne(String.class);
@@ -290,13 +293,13 @@ public class EventTrackerTest {
   public void assertOnlyOne_2eventsPosted_shouldThrowError() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("foo");
     eventBus.post("bar");
 
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("More than 1 event of type java.lang.String was posted to EventBus: " + 2);
+    thrown.expectMessage("More than 1 event of type java.lang.String was posted to DefaultEventBus: " + 2);
 
     // when
     tracker.assertOnlyOne(String.class);
@@ -319,7 +322,7 @@ public class EventTrackerTest {
   public void clearEvents_whenOneStringEventTracked_shouldClearEvents() {
     // given
     EventTracker tracker = new EventTracker(String.class);
-    EventBus eventBus = new EventBus();
+    EventBus eventBus = new DefaultEventBus();
     tracker.attach(eventBus);
     eventBus.post("foo");
 
@@ -329,8 +332,5 @@ public class EventTrackerTest {
     // then
     assertThat(tracker.getEvents(String.class), empty());
   }
-
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
 
 }

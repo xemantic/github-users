@@ -20,20 +20,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.logic.event;
-
-import rx.Observable;
-
 /**
- * Trigger carries no payload but represents signal.
- * Will be used as the type of signaling {@link Observable}s
+ * EventBus definition, implementation and utilities.
+ * <p>
+ *   Note: This package contains general logic which will be moved to the separate library.
+ * </p>
  *
  * @author morisil
  */
-public final class Trigger {
-
-  public static final Trigger INSTANCE = new Trigger();
-
-  private Trigger() { /* no instantiation */ }
-
-}
+package com.xemantic.githubusers.logic.eventbus;

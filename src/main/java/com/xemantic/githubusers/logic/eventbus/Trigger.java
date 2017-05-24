@@ -19,20 +19,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.logic.model;
+
+package com.xemantic.githubusers.logic.eventbus;
+
+import rx.Observable;
 
 /**
- * User JSON representation according to
- * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
+ * Trigger carries no payload but represents signal.
+ * Will be used as the type of signaling {@link Observable}s
  *
  * @author morisil
  */
-public interface User {
+public final class Trigger {
 
-  String getLogin();
+  public static final Trigger INSTANCE = new Trigger();
 
-  String getAvatarUrl();
-
-  String getHtmlUrl();
+  private Trigger() { /* no instantiation */ }
 
 }

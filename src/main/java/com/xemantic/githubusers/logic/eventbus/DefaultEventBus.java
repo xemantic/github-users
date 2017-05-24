@@ -19,20 +19,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.xemantic.githubusers.logic.model;
+
+package com.xemantic.githubusers.logic.eventbus;
+
+import rx.Observable;
+import rx.subjects.PublishSubject;
+import rx.subjects.SerializedSubject;
+import rx.subjects.Subject;
+
+import java.util.Objects;
 
 /**
- * User JSON representation according to
- * <a href="https://developer.github.com/v3/search/#search-users">GitHub API</a>.
+ * Minimal Event Bus based on {@code RxJava}.
  *
  * @author morisil
  */
-public interface User {
+public class DefaultEventBus implements EventBus {
 
-  String getLogin();
+  private final Subject<Object, Object> subject = new SerializedSubject<>(PublishSubject.create());
 
-  String getAvatarUrl();
+  /** {@inheritDoc} */
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> Observable<T> observe(Class<T> eventType) {
+    Objects.requireNonNull(eventType);
+    return (Observable<T>) subject.filter(event -> event.getClass().equals(eventType));
+  }
 
-  String getHtmlUrl();
+  /** {@inheritDoc} */
+  @Override
+  public void post(Object event) {
+    subject.onNext(Objects.requireNonNull(event));
+  }
 
 }
