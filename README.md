@@ -200,3 +200,9 @@ the target platform. See example
 The [Material Design](https://material.io/guidelines/) will be used on all the platforms
 with help of [Material Components](https://material.io/components/).
 
+# Versioning
+
+This project is following [Semantic Versioning](http://semver.org/) scheme
+with 3 decimal numbers separated by dots. All 3 version numbers
+(major, minor, bugfix) should be always present, which implies that for
+major and minor releases bugfix version will be set to 0.
