@@ -31,14 +31,14 @@ import java.util.Objects;
  */
 public class UserSelectedEvent {
 
-    private final User user;
+  private final User user;
 
-    public UserSelectedEvent(User user) {
-        this.user = Objects.requireNonNull(user);
-    }
+  public UserSelectedEvent(User user) {
+    this.user = Objects.requireNonNull(user);
+  }
 
-    public User getUser() {
-        return user;
-    }
+  public User getUser() {
+    return user;
+  }
 
 }
