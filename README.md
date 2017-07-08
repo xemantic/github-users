@@ -172,6 +172,8 @@ Only interfaces to be implemented here
 * [UserQueryView](src/main/java/com/xemantic/githubusers/logic/view/UserQueryView.java) - represents textual input where the query is provided
 * [UserListView](src/main/java/com/xemantic/githubusers/logic/view/UserListView.java)
 * [UserView](src/main/java/com/xemantic/githubusers/logic/view/UserView.java) - single element in the list.
+* [SnackbarView](src/main/java/com/xemantic/githubusers/logic/view/SnackbarView.java) -
+a [snackbar](https://material.io/guidelines/components/snackbars-toasts.html) implemented differently on each platform.
 
 ## Presenter
 
@@ -182,6 +184,7 @@ Each view is accompanied with respective presenter.
 * [UserListPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserListPresenter.java)
 (the most complex one)
 * [UserViewPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserPresenter.java)
+* [SnackbarPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/SnackbarPresenter.java)
 
 Expectations for these presenters are visible in their
 [test cases](src/test/java/com/xemantic/githubusers/presenter)
