@@ -22,52 +22,47 @@
 
 package com.xemantic.githubusers.logic.presenter;
 
+import com.xemantic.githubusers.logic.driver.UrlOpener;
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
-import com.xemantic.githubusers.logic.eventbus.DefaultEventBus;
 import com.xemantic.githubusers.logic.eventbus.EventBus;
-import com.xemantic.githubusers.logic.view.SnackbarView;
-import org.junit.Test;
+import com.xemantic.githubusers.logic.view.DrawerView;
 
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
- * Test of the {@link SnackbarPresenter}.
+ * Presenter of the {@link DrawerView}.
  *
  * @author morisil
  */
-public class SnackbarPresenterTest {
+public class DrawerPresenter {
 
-  @Test
-  public void start_noEventPosted_shouldDoNothingWithView() {
-    // given
-    EventBus eventBus = new DefaultEventBus();
-    SnackbarView view = mock(SnackbarView.class);
-    SnackbarPresenter presenter = new SnackbarPresenter(eventBus);
+  private final String projectUrl;
 
-    // when
-    presenter.start(view);
+  private final EventBus eventBus;
 
-    // then
-    then(view).shouldHaveZeroInteractions();
+  private final UrlOpener urlOpener;
+
+  @Inject
+  public DrawerPresenter(
+      @Named("projectGitHubUrl") String projectUrl,
+      EventBus eventBus,
+      UrlOpener urlOpener) {
+
+    this.projectUrl = projectUrl;
+    this.eventBus = eventBus;
+    this.urlOpener = urlOpener;
   }
 
-  @Test
-  public void start_eventPosted_shouldShowTheMessage() {
-    // given
-    SnackbarMessageEvent event = new SnackbarMessageEvent("foo");
-    EventBus eventBus = new DefaultEventBus();
-    SnackbarView view = mock(SnackbarView.class);
-
-    SnackbarPresenter presenter = new SnackbarPresenter(eventBus);
-    presenter.start(view);
-
-    // when
-    eventBus.post(event);
-
-    // then
-    then(view).should().show("foo");
-    then(view).shouldHaveNoMoreInteractions();
+  public void start(DrawerView view) {
+    view.observeOpenDrawerIntent()
+        .subscribe(t -> view.openDrawer(true));
+    view.observeReadAboutIntent()
+        .subscribe(t -> eventBus.post(new SnackbarMessageEvent("To be implemented soon")));
+    view.observeOpenProjectOnGitHubIntent()
+        .subscribe(t -> urlOpener.openUrl(projectUrl));
+    view.observeSelectLanguageIntent()
+        .subscribe(t -> eventBus.post(new SnackbarMessageEvent("To be implemented soon")));
   }
 
 }
