@@ -9,7 +9,9 @@ from Java to JavaScript and Objective-C.
 
 # Demo
 
-Please rather take a look at frontend flavors:
+Web: https://github-users-web.appspot.com/
+
+For details check these separate projects prepared for each platform:
 
 * [github-users-web](https://github.com/xemantic/github-users-web)
 * [github-users-android](https://github.com/xemantic/github-users-android)
