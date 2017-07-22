@@ -22,15 +22,13 @@
 
 package com.xemantic.githubusers.logic.presenter;
 
-import com.xemantic.githubusers.logic.eventbus.DefaultEventBus;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
-import com.xemantic.githubusers.logic.eventbus.Trigger;
+import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.event.UserSelectedEvent;
-import com.xemantic.githubusers.logic.eventbus.EventTracker;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.view.UserView;
 import org.junit.Test;
 import rx.Observable;
+import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -49,7 +47,7 @@ public class UserPresenterTest {
   @Test
   public void start_user_shouldDisplayUser() {
     // given
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
 
     User user = mock(User.class);
     given(user.getLogin()).willReturn("foo");
@@ -57,7 +55,7 @@ public class UserPresenterTest {
     UserView view = mock(UserView.class);
     given(view.observeSelection()).willReturn(Observable.empty());
 
-    UserPresenter presenter = new UserPresenter(eventBus);
+    UserPresenter presenter = new UserPresenter(userSelectedBus::onNext);
 
     // when
     presenter.start(user, view);
@@ -71,9 +69,9 @@ public class UserPresenterTest {
   @Test
   public void onUserSelected_view_shouldPostUserSelectedEvent() {
     // given
-    EventBus eventBus = new DefaultEventBus();
-    EventTracker eventTracker = new EventTracker(UserSelectedEvent.class);
-    eventTracker.attach(eventBus);
+    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
+    TestSubscriber<UserSelectedEvent> tracker = new TestSubscriber<>();
+    userSelectedBus.subscribe(tracker);
 
     User user = mock(User.class);
     given(user.getLogin()).willReturn("foo");
@@ -82,15 +80,15 @@ public class UserPresenterTest {
     PublishSubject<Trigger> selectionTrigger = PublishSubject.create();
     given(view.observeSelection()).willReturn(selectionTrigger);
 
-    UserPresenter presenter = new UserPresenter(eventBus);
+    UserPresenter presenter = new UserPresenter(userSelectedBus::onNext);
     presenter.start(user, view);
 
     // when
     selectionTrigger.onNext(Trigger.INSTANCE);
 
     // then
-    UserSelectedEvent event = eventTracker.assertOnlyOne(UserSelectedEvent.class);
-    assertThat(event.getUser().getLogin(), is("foo"));
+    assertThat(tracker.getValueCount(), is(1));
+    assertThat(tracker.getOnNextEvents().get(0).getUser().getLogin(), is("foo"));
   }
 
 }

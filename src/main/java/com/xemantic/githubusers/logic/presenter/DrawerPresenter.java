@@ -24,9 +24,9 @@ package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.driver.UrlOpener;
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
 import com.xemantic.githubusers.logic.view.DrawerView;
 
+import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -39,18 +39,18 @@ public class DrawerPresenter {
 
   private final String projectUrl;
 
-  private final EventBus eventBus;
+  private final Consumer<SnackbarMessageEvent> snackbarMessageConsumer;
 
   private final UrlOpener urlOpener;
 
   @Inject
   public DrawerPresenter(
       @Named("projectGitHubUrl") String projectUrl,
-      EventBus eventBus,
+      Consumer<SnackbarMessageEvent> snackbarMessageConsumer,
       UrlOpener urlOpener) {
 
     this.projectUrl = projectUrl;
-    this.eventBus = eventBus;
+    this.snackbarMessageConsumer = snackbarMessageConsumer;
     this.urlOpener = urlOpener;
   }
 
@@ -58,11 +58,11 @@ public class DrawerPresenter {
     view.observeOpenDrawerIntent()
         .subscribe(t -> view.openDrawer(true));
     view.observeReadAboutIntent()
-        .subscribe(t -> eventBus.post(new SnackbarMessageEvent("To be implemented soon")));
+        .subscribe(t -> snackbarMessageConsumer.accept(new SnackbarMessageEvent("To be implemented soon")));
     view.observeOpenProjectOnGitHubIntent()
         .subscribe(t -> urlOpener.openUrl(projectUrl));
     view.observeSelectLanguageIntent()
-        .subscribe(t -> eventBus.post(new SnackbarMessageEvent("To be implemented soon")));
+        .subscribe(t -> snackbarMessageConsumer.accept(new SnackbarMessageEvent("To be implemented soon")));
   }
 
 }

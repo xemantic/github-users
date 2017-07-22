@@ -23,10 +23,10 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
 import com.xemantic.githubusers.logic.view.SnackbarView;
 
 import javax.inject.Inject;
+import rx.Observable;
 
 /**
  * Presenter of the {@link SnackbarView}.
@@ -35,16 +35,15 @@ import javax.inject.Inject;
  */
 public class SnackbarPresenter {
 
-  private final EventBus eventBus;
+  private final Observable<SnackbarMessageEvent> snackbarMessage$;
 
   @Inject
-  public SnackbarPresenter(EventBus eventBus) {
-    this.eventBus = eventBus;
+  public SnackbarPresenter(Observable<SnackbarMessageEvent> snackbarMessage$) {
+    this.snackbarMessage$ = snackbarMessage$;
   }
 
   public void start(SnackbarView view) {
-    eventBus.observe(SnackbarMessageEvent.class)
-        .subscribe(e -> view.show(e.getMessage()));
+    snackbarMessage$.subscribe(e -> view.show(e.getMessage()));
   }
 
 }
