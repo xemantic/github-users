@@ -23,9 +23,8 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.error.ErrorAnalyzer;
-import com.xemantic.githubusers.logic.eventbus.DefaultEventBus;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
-import com.xemantic.githubusers.logic.eventbus.Trigger;
+import com.xemantic.githubusers.logic.event.UserSelectedEvent;
+import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.model.SearchResult;
 import com.xemantic.githubusers.logic.model.User;
@@ -60,7 +59,7 @@ public class UserListPresenterTest {
   @Test
   public void start_noInput_shouldDoNothingWithViewAndServices() {
     // given
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
 
     UserService userService = mock(UserService.class);
     ErrorAnalyzer errorAnalyzer = mock(ErrorAnalyzer.class);
@@ -69,7 +68,7 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(Observable.empty());
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> mock(UserView.class),
@@ -87,7 +86,7 @@ public class UserListPresenterTest {
   @Test
   public void onUserQueryEvent_emptyQueryString_shouldDoNothingWithView() {
     // given
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
 
     UserService userService = mock(UserService.class);
     ErrorAnalyzer errorAnalyzer = mock(ErrorAnalyzer.class);
@@ -96,7 +95,7 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(Observable.empty());
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> mock(UserView.class),
@@ -108,7 +107,7 @@ public class UserListPresenterTest {
     UserQueryEvent event = new UserQueryEvent(" "); // empty string
 
     // when
-    eventBus.post(event);
+    userQueryBus.onNext(event);
 
     // then
     verifyNoMoreInteractions(view, userService, errorAnalyzer);
@@ -118,7 +117,7 @@ public class UserListPresenterTest {
   public void onUserQueryEvent_1UserToBeFound_shouldRetrieveAndDisplay1UserAndDisableLoadMore() {
     // given
     int totalCount = 1;
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
 
     User user = mock(User.class);
     UserService userService = mock(UserService.class);
@@ -138,7 +137,7 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(Observable.empty());
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> userView,
@@ -149,7 +148,7 @@ public class UserListPresenterTest {
     presenter.start(view);
 
     // when
-    eventBus.post(new UserQueryEvent("foo"));
+    userQueryBus.onNext(new UserQueryEvent("foo"));
 
     // then
     verify(userPresenter).start(user, userView);
@@ -168,7 +167,7 @@ public class UserListPresenterTest {
     // given
     int pageSize = 1;
     int totalCount = 2;
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
 
     User user = mock(User.class);
     UserService userService = mock(UserService.class);
@@ -188,7 +187,7 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(Observable.empty());
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> userView,
@@ -199,7 +198,7 @@ public class UserListPresenterTest {
     presenter.start(view);
 
     // when
-    eventBus.post(new UserQueryEvent("foo"));
+    userQueryBus.onNext(new UserQueryEvent("foo"));
 
     // then
     verify(userPresenter).start(user, userView);
@@ -218,7 +217,8 @@ public class UserListPresenterTest {
     // given
     int pageSize = 1;
     int totalCount = 2;
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
+    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
 
     User user1 = mock(User.class);
     User user2 = mock(User.class);
@@ -243,16 +243,16 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(loadMoreTrigger);
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> userView,
-        () -> new UserPresenter(eventBus),
+        () -> new UserPresenter(userSelectedBus::onNext),
         pageSize,
         DEFAULT_USER_SEARCH_LIMIT
     );
     presenter.start(view);
-    eventBus.post(new UserQueryEvent("foo"));
+    userQueryBus.onNext(new UserQueryEvent("foo"));
 
     // when
     loadMoreTrigger.onNext(Trigger.INSTANCE);
@@ -275,7 +275,8 @@ public class UserListPresenterTest {
   public void onLoadAll1000Users_when1001UsersFoundInTotal_shouldRequestAndDisplay1000UsersIn10PagesAndThenDisableLoadMore() {
     // given
     int totalCount = 1001;  // higher than max limit of 1000
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
+    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
 
     User user = mock(User.class);
     UserService userService = mock(UserService.class);
@@ -294,18 +295,18 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(loadMoreTrigger);
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> userView,
-        () -> new UserPresenter(eventBus),
+        () -> new UserPresenter(userSelectedBus::onNext),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
     presenter.start(view);
 
     // when
-    eventBus.post(new UserQueryEvent("foo"));
+    userQueryBus.onNext(new UserQueryEvent("foo"));
     for (int i = 2; i <= 10; i++) { // starting with 2 as the page 1 is loaded immediately after query event
       loadMoreTrigger.onNext(Trigger.INSTANCE);
     }
@@ -329,14 +330,7 @@ public class UserListPresenterTest {
     // given
     UserQueryEvent event1 = new UserQueryEvent("foo");
     UserQueryEvent event2 = new UserQueryEvent("bar");
-    PublishSubject<UserQueryEvent> events$ = PublishSubject.create();
-    EventBus eventBus = mock(EventBus.class);
-    given(eventBus.observe(UserQueryEvent.class)).willReturn(events$);
-    doAnswer(invocation -> {events$.onNext(event1); return null;})
-        .when(eventBus).post(event1);
-    doAnswer(invocation -> {events$.onNext(event2); return null;})
-        .when(eventBus).post(event2);
-
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
     PublishSubject<SearchResult> request1$ = PublishSubject.create();
     PublishSubject<SearchResult> request2$ = PublishSubject.create();
 
@@ -351,51 +345,48 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(loadMoreTrigger);
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> mock(UserView.class),
-        () -> new UserPresenter(eventBus),
+        () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
 
     // intermediate state check
-    assertThat(events$.hasObservers(), is(false));
+    assertThat(userQueryBus.hasObservers(), is(false));
     assertThat(request1$.hasObservers(), is(false));
     assertThat(request2$.hasObservers(), is(false));
 
     presenter.start(view);
 
     // intermediate state check
-    assertThat(events$.hasObservers(), is(true));
+    assertThat(userQueryBus.hasObservers(), is(true));
     assertThat(request1$.hasObservers(), is(false));
     assertThat(request2$.hasObservers(), is(false));
 
-    eventBus.post(event1);
+    userQueryBus.onNext(event1);
 
     // intermediate state check
-    assertThat(events$.hasObservers(), is(true));
+    assertThat(userQueryBus.hasObservers(), is(true));
     assertThat(request1$.hasObservers(), is(true));
     assertThat(request2$.hasObservers(), is(false));
 
     // when
-    eventBus.post(event2);
+    userQueryBus.onNext(event2);
 
     // then
-    InOrder inOrder = inOrder(eventBus, userService);
-    inOrder.verify(eventBus).observe(UserQueryEvent.class);
-    inOrder.verify(eventBus).post(event1);
+    InOrder inOrder = inOrder(userService);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
-    inOrder.verify(eventBus).post(event2);
     inOrder.verify(userService).find("bar", 1, DEFAULT_PAGE_SIZE);
 
-    assertThat(events$.hasObservers(), is(true));
+    assertThat(userQueryBus.hasObservers(), is(true));
     // request1 is eventually unsubscribed, which implies pending request is cancelled
     assertThat(request1$.hasObservers(), is(false));
     assertThat(request2$.hasObservers(), is(true));
 
-    verifyNoMoreInteractions(eventBus, userService, errorAnalyzer);
+    verifyNoMoreInteractions(userService, errorAnalyzer);
   }
 
   @Test
@@ -405,7 +396,7 @@ public class UserListPresenterTest {
     RuntimeException error = new RuntimeException();
     int totalCount = 2;
     int pageSize = 2;
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
 
     User user = mock(User.class);
     UserService userService = mock(UserService.class);
@@ -426,7 +417,7 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> userView,
@@ -435,7 +426,7 @@ public class UserListPresenterTest {
         DEFAULT_USER_SEARCH_LIMIT
     );
     presenter.start(view);
-    eventBus.post(new UserQueryEvent("foo"));
+    userQueryBus.onNext(new UserQueryEvent("foo"));
 
     // when - after error
     loadMoreTrigger.onNext(Trigger.INSTANCE);
@@ -463,7 +454,7 @@ public class UserListPresenterTest {
     @SuppressWarnings("ThrowableNotThrown")
     RuntimeException error = new RuntimeException();
 
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
 
     UserService userService = mock(UserService.class);
     given(userService.find("foo", 1, DEFAULT_PAGE_SIZE)).willThrow(error);
@@ -476,7 +467,7 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(loadMoreTrigger);
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> mock(UserView.class),
@@ -489,7 +480,7 @@ public class UserListPresenterTest {
     // when
     RuntimeException thrown;
     try {
-      eventBus.post(new UserQueryEvent("foo"));
+      userQueryBus.onNext(new UserQueryEvent("foo"));
       throw new AssertionError("Should throw exception");
     } catch (RuntimeException e) {
       thrown = e;
@@ -513,12 +504,7 @@ public class UserListPresenterTest {
   public void stop_whileHandlingRequest_shouldUnsubscribeFromEventBusCancelRequestAndUnbindView() {
     // given
     UserQueryEvent event = new UserQueryEvent("foo");
-    PublishSubject<UserQueryEvent> events$ = PublishSubject.create();
-    EventBus eventBus = mock(EventBus.class);
-    given(eventBus.observe(UserQueryEvent.class)).willReturn(events$);
-    doAnswer(invocation -> {events$.onNext(event); return null;})
-        .when(eventBus).post(event);
-
+    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
     PublishSubject<SearchResult> request$ = PublishSubject.create();
 
     UserService userService = mock(UserService.class);
@@ -531,16 +517,16 @@ public class UserListPresenterTest {
     given(view.observeLoadMore()).willReturn(loadMoreTrigger);
 
     UserListPresenter presenter = new UserListPresenter(
-        eventBus,
+        userQueryBus,
         userService,
         errorAnalyzer,
         () -> mock(UserView.class),
-        () -> new UserPresenter(eventBus),
+        () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
     presenter.start(view);
-    eventBus.post(event);
+    userQueryBus.onNext(event);
 
     // intermediate check
     assertThat(request$.hasObservers(), is(true));
@@ -549,13 +535,11 @@ public class UserListPresenterTest {
     presenter.stop();
 
     // then
-    InOrder inOrder = inOrder(eventBus, userService);
-    inOrder.verify(eventBus).observe(UserQueryEvent.class);
-    inOrder.verify(eventBus).post(event);
+    InOrder inOrder = inOrder(userService);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
-    verifyNoMoreInteractions(eventBus, userService, errorAnalyzer);
+    verifyNoMoreInteractions(userService, errorAnalyzer);
 
-    assertThat(events$.hasObservers(), is(false));
+    assertThat(userQueryBus.hasObservers(), is(false));
     assertThat(request$.hasObservers(), is(false));
     assertThat(loadMoreTrigger.hasObservers(), is(false));
   }

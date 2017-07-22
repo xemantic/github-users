@@ -22,7 +22,7 @@
 
 package com.xemantic.githubusers.logic.view;
 
-import com.xemantic.githubusers.logic.eventbus.Trigger;
+import com.xemantic.githubusers.logic.event.Trigger;
 import rx.Observable;
 
 /**

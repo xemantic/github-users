@@ -23,10 +23,9 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
-import com.xemantic.githubusers.logic.eventbus.DefaultEventBus;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
 import com.xemantic.githubusers.logic.view.SnackbarView;
 import org.junit.Test;
+import rx.subjects.PublishSubject;
 
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -41,9 +40,9 @@ public class SnackbarPresenterTest {
   @Test
   public void start_noEventPosted_shouldDoNothingWithView() {
     // given
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<SnackbarMessageEvent> snackbarMessageBus = PublishSubject.create();
     SnackbarView view = mock(SnackbarView.class);
-    SnackbarPresenter presenter = new SnackbarPresenter(eventBus);
+    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessageBus);
 
     // when
     presenter.start(view);
@@ -56,14 +55,14 @@ public class SnackbarPresenterTest {
   public void start_eventPosted_shouldShowTheMessage() {
     // given
     SnackbarMessageEvent event = new SnackbarMessageEvent("foo");
-    EventBus eventBus = new DefaultEventBus();
+    PublishSubject<SnackbarMessageEvent> snackbarMessageBus = PublishSubject.create();
     SnackbarView view = mock(SnackbarView.class);
 
-    SnackbarPresenter presenter = new SnackbarPresenter(eventBus);
+    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessageBus);
     presenter.start(view);
 
     // when
-    eventBus.post(event);
+    snackbarMessageBus.onNext(event);
 
     // then
     then(view).should().show("foo");

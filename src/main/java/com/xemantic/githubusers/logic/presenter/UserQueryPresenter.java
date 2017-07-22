@@ -23,9 +23,9 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
 import com.xemantic.githubusers.logic.view.UserQueryView;
 
+import java.util.function.Consumer;
 import javax.inject.Inject;
 
 /**
@@ -35,16 +35,16 @@ import javax.inject.Inject;
  */
 public class UserQueryPresenter {
 
-  private final EventBus eventBus;
+  private final Consumer<UserQueryEvent> userQueryConsumer;
 
   @Inject
-  public UserQueryPresenter(EventBus eventBus) {
-    this.eventBus = eventBus;
+  public UserQueryPresenter(Consumer<UserQueryEvent> userQueryConsumer) {
+    this.userQueryConsumer = userQueryConsumer;
   }
 
   public void start(UserQueryView view) {
     view.observeQueryInput()
-        .subscribe(query -> eventBus.post(new UserQueryEvent(query)));
+        .subscribe(query -> userQueryConsumer.accept(new UserQueryEvent(query)));
   }
 
 }

@@ -23,14 +23,14 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.error.ErrorAnalyzer;
-import com.xemantic.githubusers.logic.eventbus.EventBus;
-import com.xemantic.githubusers.logic.eventbus.Trigger;
+import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.model.SearchResult;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.service.UserService;
 import com.xemantic.githubusers.logic.view.UserListView;
 import com.xemantic.githubusers.logic.view.UserView;
+import rx.Observable;
 import rx.Single;
 import rx.Subscription;
 import rx.plugins.RxJavaHooks;
@@ -48,7 +48,7 @@ import java.util.List;
  */
 public class UserListPresenter {
 
-  private final EventBus eventBus;
+  private final Observable<UserQueryEvent> userQuery$;
 
   private final UserService userService;
 
@@ -79,7 +79,7 @@ public class UserListPresenter {
 
   @Inject
   public UserListPresenter(
-      EventBus eventBus,
+      Observable<UserQueryEvent> userQuery$,
       UserService userService,
       ErrorAnalyzer errorAnalyzer,
       Provider<UserView> userViewProvider,
@@ -88,7 +88,7 @@ public class UserListPresenter {
       // "Only the first 1000 search results are available"
       @Named("gitHubUserSearchLimit") int gitHubUserSearchLimit
   ) {
-    this.eventBus = eventBus;
+    this.userQuery$ = userQuery$;
     this.userService = userService;
     this.errorAnalyzer = errorAnalyzer;
     this.userViewProvider = userViewProvider;
@@ -104,7 +104,7 @@ public class UserListPresenter {
    */
   public void start(UserListView view) {
     this.view = view;
-    userQuerySubscription = eventBus.observe(UserQueryEvent.class)
+    userQuerySubscription = userQuery$
         .filter(event -> ! event.getQuery().trim().isEmpty()) // kick out empty queries
         .subscribe(event -> handleNewQuery(event.getQuery()));
   }
@@ -112,7 +112,7 @@ public class UserListPresenter {
   /**
    * Stops this presenter. This method is supposed to be called
    * when it is required to cancel all the pending HTTP requests, and
-   * unsubscribe from the {@link EventBus}. for example when user is navigating
+   * unsubscribe from any {@link Observable}. for example when user is navigating
    * to another {@code Activity} on Android platform.
    */
   public void stop() {
