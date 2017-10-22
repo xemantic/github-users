@@ -23,7 +23,7 @@
 package com.xemantic.githubusers.logic.view;
 
 import com.xemantic.githubusers.logic.event.Trigger;
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * The <a href="https://material.io/guidelines/patterns/navigation-drawer.html">navigation drawer</a>

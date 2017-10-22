@@ -22,7 +22,7 @@
 
 package com.xemantic.githubusers.logic.view;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Displays text input where query for GitHub users can be typed.

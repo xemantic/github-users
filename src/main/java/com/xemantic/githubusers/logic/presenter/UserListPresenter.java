@@ -30,11 +30,10 @@ import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.service.UserService;
 import com.xemantic.githubusers.logic.view.UserListView;
 import com.xemantic.githubusers.logic.view.UserView;
-import rx.Observable;
-import rx.Single;
-import rx.Subscription;
-import rx.plugins.RxJavaHooks;
-import rx.subjects.PublishSubject;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.subjects.PublishSubject;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -67,15 +66,15 @@ public class UserListPresenter {
    * because these fields are supposed to be always mutated from the
    * rendering thread of each platform (UI rendering is single-threaded everywhere)
    */
-  private int currentPage = 0;
+  private int page;
 
   private String query;
 
   private UserListView view;
 
-  private Subscription userQuerySubscription;
+  private Disposable userQuerySubscription;
 
-  private Subscription requestSubscription;
+  private Disposable requestSubscription;
 
   @Inject
   public UserListPresenter(
@@ -116,8 +115,8 @@ public class UserListPresenter {
    * to another {@code Activity} on Android platform.
    */
   public void stop() {
-    requestSubscription.unsubscribe();
-    userQuerySubscription.unsubscribe();
+    requestSubscription.dispose();
+    userQuerySubscription.dispose();
   }
 
   private void handleNewQuery(String query) {
@@ -128,12 +127,11 @@ public class UserListPresenter {
 
     requestSubscription = view.observeLoadMore()
         .mergeWith(firstTrigger)
-        .doOnNext(e -> afterLoadMoreEvent())
+        .doOnNext(e -> view.enableLoadMore(false))
         .flatMapSingle(e -> requestPage())
-        .doOnNext(this::handleResult)
-        .doOnError(this::handleError)
+        .doOnError(e -> view.enableLoadMore(true))
         .retry((integer, throwable) -> errorAnalyzer.isRecoverable(throwable))
-        .subscribe();
+        .subscribe(this::handleResult, this::handleError);
 
     firstTrigger.onNext(Trigger.INSTANCE);
     /*
@@ -150,33 +148,33 @@ public class UserListPresenter {
   private void prepareNewRequestStream(String query) {
     this.query = query;
     if (requestSubscription != null) {
-      requestSubscription.unsubscribe();
+      requestSubscription.dispose();
     }
-    currentPage = 0;
+    page = 1;
   }
 
   private void afterLoadMoreEvent() {
     view.enableLoadMore(false);
-    currentPage++;
   }
 
   private Single<SearchResult> requestPage() {
-    return userService.find(query, currentPage, userListPageSize);
+    return userService.find(query, page, userListPageSize);
   }
 
   private void handleResult(SearchResult result) {
-    if (currentPage == 1) {
+    if (page == 1) {
       view.clear();
     }
     addUsers(result.getItems());
     if (shouldEnableLoadMore(result)) {
       view.enableLoadMore(true);
     }
+    page++;
   }
 
   private boolean shouldEnableLoadMore(SearchResult result) {
     int currentCount = (
-        ((currentPage - 1) * userListPageSize)
+        ((page - 1) * userListPageSize)
             + result.getItems().size()
     );
     return (
@@ -186,9 +184,8 @@ public class UserListPresenter {
   }
 
   private void handleError(Throwable e) {
-    currentPage--;
-    view.enableLoadMore(true); // give it a chance to retry
-    RxJavaHooks.onError(e); // just to log unexpected exception, is it possible to do it globally for all doOnErrors?
+    //view.enableLoadMore(true); // give it a chance to retry
+    //RxJavaHooks.onError(e); // just to log unexpected exception, is it possible to do it globally for all doOnErrors?
   }
 
   private void addUsers(List<User> users) {

@@ -22,7 +22,7 @@
 
 package com.xemantic.githubusers.logic.event;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Trigger carries no payload but represents signal.

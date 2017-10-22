@@ -24,14 +24,13 @@ package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.view.UserQueryView;
+import io.reactivex.Observable;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.subjects.PublishSubject;
 import org.junit.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
-import rx.subjects.PublishSubject;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -50,7 +49,7 @@ public class UserQueryPresenterTest {
   public void start_view_shouldOnlyBindToView() {
     // given
     PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
-    TestSubscriber<UserQueryEvent> tracker = new TestSubscriber<>();
+    TestObserver<UserQueryEvent> tracker = new TestObserver<>();
     userQueryBus.subscribe(tracker);
 
     UserQueryView view = mock(UserQueryView.class);
@@ -64,14 +63,14 @@ public class UserQueryPresenterTest {
     // then
     then(view).should().observeQueryInput();
     then(view).shouldHaveNoMoreInteractions();
-    assertThat(tracker.getOnNextEvents(), empty());
+    tracker.assertEmpty();
   }
 
   @Test
   public void onUserQuery_queryString_shouldPostEventWithQueryString() {
     // given
     PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
-    TestSubscriber<UserQueryEvent> tracker = new TestSubscriber<>();
+    TestObserver<UserQueryEvent> tracker = new TestObserver<>();
     userQueryBus.subscribe(tracker);
 
     UserQueryView view = mock(UserQueryView.class);
@@ -84,15 +83,15 @@ public class UserQueryPresenterTest {
     userQueryTrigger.onNext("foo");
 
     // then
-    assertThat(tracker.getValueCount(), is(1));
-    assertThat(tracker.getOnNextEvents().get(0).getQuery(), is("foo"));
+    tracker.assertValueCount(1);
+    assertThat(tracker.values().get(0).getQuery(), is("foo"));
   }
 
   @Test
   public void onUserQuery_2subsequentQueriesProvided_shouldPost2EventsWithQueryString() {
     // given
     PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
-    TestSubscriber<UserQueryEvent> tracker = new TestSubscriber<>();
+    TestObserver<UserQueryEvent> tracker = new TestObserver<>();
     userQueryBus.subscribe(tracker);
 
     UserQueryView view = mock(UserQueryView.class);
@@ -106,7 +105,7 @@ public class UserQueryPresenterTest {
     userQueryTrigger.onNext("foobar");
 
     // then
-    List<UserQueryEvent> events = tracker.getOnNextEvents();
+    List<UserQueryEvent> events = tracker.values();
     assertThat(events, hasSize(2));
     assertThat(events.get(0).getQuery(), is("foo"));
     assertThat(events.get(1).getQuery(), is("foobar"));

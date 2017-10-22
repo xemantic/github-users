@@ -26,10 +26,10 @@ import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.view.UserView;
+import io.reactivex.Observable;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.subjects.PublishSubject;
 import org.junit.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
-import rx.subjects.PublishSubject;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -70,7 +70,7 @@ public class UserPresenterTest {
   public void onUserSelected_view_shouldPostUserSelectedEvent() {
     // given
     PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
-    TestSubscriber<UserSelectedEvent> tracker = new TestSubscriber<>();
+    TestObserver<UserSelectedEvent> tracker = new TestObserver<>();
     userSelectedBus.subscribe(tracker);
 
     User user = mock(User.class);
@@ -87,8 +87,8 @@ public class UserPresenterTest {
     selectionTrigger.onNext(Trigger.INSTANCE);
 
     // then
-    assertThat(tracker.getValueCount(), is(1));
-    assertThat(tracker.getOnNextEvents().get(0).getUser().getLogin(), is("foo"));
+    tracker.assertValueCount(1);
+    assertThat(tracker.values().get(0).getUser().getLogin(), is("foo"));
   }
 
 }

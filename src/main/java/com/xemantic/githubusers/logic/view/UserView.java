@@ -24,7 +24,7 @@ package com.xemantic.githubusers.logic.view;
 
 import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.model.User;
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Displays single user entry.

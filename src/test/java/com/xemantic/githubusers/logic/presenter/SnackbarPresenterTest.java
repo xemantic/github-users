@@ -24,8 +24,8 @@ package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
 import com.xemantic.githubusers.logic.view.SnackbarView;
+import io.reactivex.subjects.PublishSubject;
 import org.junit.Test;
-import rx.subjects.PublishSubject;
 
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
