@@ -26,14 +26,12 @@ import com.xemantic.githubusers.logic.driver.UrlOpener;
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
 import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.view.DrawerView;
+import io.reactivex.Observable;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.subjects.PublishSubject;
 import org.junit.Test;
-import rx.Observable;
-import rx.observers.TestSubscriber;
-import rx.subjects.PublishSubject;
 
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -59,6 +57,7 @@ public class DrawerPresenterTest {
     given(view.observeReadAboutIntent()).willReturn(Observable.empty());
     given(view.observeOpenProjectOnGitHubIntent()).willReturn(Observable.empty());
     given(view.observeSelectLanguageIntent()).willReturn(Observable.empty());
+
     DrawerPresenter presenter = new DrawerPresenter("http://foo.com", snackbarMessageBus::onNext, urlOpener);
 
     // when
@@ -106,7 +105,7 @@ public class DrawerPresenterTest {
   public void start_readAboutIntent_shouldPostToSnackbar() {
     // given
     PublishSubject<SnackbarMessageEvent> snackbarMessageBus = PublishSubject.create();
-    TestSubscriber<SnackbarMessageEvent> tracker = new TestSubscriber<>();
+    TestObserver<SnackbarMessageEvent> tracker = new TestObserver<>();
     snackbarMessageBus.subscribe(tracker);
 
     UrlOpener urlOpener = mock(UrlOpener.class);
@@ -130,8 +129,8 @@ public class DrawerPresenterTest {
     verify(view).observeSelectLanguageIntent();
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).shouldHaveZeroInteractions();
-    assertThat(tracker.getOnNextEvents(), not(empty()));
-    assertThat(tracker.getOnNextEvents().get(0).getMessage(), is("To be implemented soon"));
+    tracker.assertValueCount(1);
+    assertThat(tracker.values().get(0).getMessage(), is("To be implemented soon"));
   }
 
   @Test
@@ -167,7 +166,7 @@ public class DrawerPresenterTest {
   public void start_selectLanguageIntent_shouldPostToSnackbar() {
     // given
     PublishSubject<SnackbarMessageEvent> snackbarMessageBus = PublishSubject.create();
-    TestSubscriber<SnackbarMessageEvent> tracker = new TestSubscriber<>();
+    TestObserver<SnackbarMessageEvent> tracker = new TestObserver<>();
     snackbarMessageBus.subscribe(tracker);
 
     UrlOpener urlOpener = mock(UrlOpener.class);
@@ -191,8 +190,8 @@ public class DrawerPresenterTest {
     verify(view).observeSelectLanguageIntent();
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).shouldHaveZeroInteractions();
-    assertThat(tracker.getOnNextEvents(), not(empty()));
-    assertThat(tracker.getOnNextEvents().get(0).getMessage(), is("To be implemented soon"));
+    tracker.assertValueCount(1);
+    tracker.assertValueAt(0, e -> e.getMessage().equals("To be implemented soon"));
   }
 
 }

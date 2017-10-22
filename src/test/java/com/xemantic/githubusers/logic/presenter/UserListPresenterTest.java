@@ -31,11 +31,11 @@ import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.service.UserService;
 import com.xemantic.githubusers.logic.view.UserListView;
 import com.xemantic.githubusers.logic.view.UserView;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.subjects.PublishSubject;
 import org.junit.Test;
 import org.mockito.InOrder;
-import rx.Observable;
-import rx.Single;
-import rx.subjects.PublishSubject;
 
 import java.util.Collections;
 
@@ -335,8 +335,8 @@ public class UserListPresenterTest {
     PublishSubject<SearchResult> request2$ = PublishSubject.create();
 
     UserService userService = mock(UserService.class);
-    given(userService.find("foo", 1, DEFAULT_PAGE_SIZE)).willReturn(request1$.toSingle());
-    given(userService.find("bar", 1, DEFAULT_PAGE_SIZE)).willReturn(request2$.toSingle());
+    given(userService.find("foo", 1, DEFAULT_PAGE_SIZE)).willReturn(request1$.singleOrError());
+    given(userService.find("bar", 1, DEFAULT_PAGE_SIZE)).willReturn(request2$.singleOrError());
 
     ErrorAnalyzer errorAnalyzer = mock(ErrorAnalyzer.class);
 
@@ -508,7 +508,7 @@ public class UserListPresenterTest {
     PublishSubject<SearchResult> request$ = PublishSubject.create();
 
     UserService userService = mock(UserService.class);
-    given(userService.find("foo", 1, DEFAULT_PAGE_SIZE)).willReturn(request$.toSingle());
+    given(userService.find("foo", 1, DEFAULT_PAGE_SIZE)).willReturn(request$.singleOrError());
 
     ErrorAnalyzer errorAnalyzer = mock(ErrorAnalyzer.class);
 

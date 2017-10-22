@@ -24,9 +24,9 @@ package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
 import com.xemantic.githubusers.logic.view.SnackbarView;
+import io.reactivex.Observable;
 
 import javax.inject.Inject;
-import rx.Observable;
 
 /**
  * Presenter of the {@link SnackbarView}.

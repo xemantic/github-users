@@ -22,7 +22,7 @@
 
 package com.xemantic.githubusers.logic.error;
 
-import rx.Observable;
+import io.reactivex.Observable;
 
 /**
  * Analyzes {@link Throwable}s occurring in the streams of observed data.

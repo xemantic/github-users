@@ -22,7 +22,7 @@
 package com.xemantic.githubusers.logic.service;
 
 import com.xemantic.githubusers.logic.model.SearchResult;
-import rx.Single;
+import io.reactivex.Single;
 
 /**
  * User search service according to
