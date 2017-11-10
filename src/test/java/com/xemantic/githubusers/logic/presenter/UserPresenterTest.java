@@ -22,15 +22,22 @@
 
 package com.xemantic.githubusers.logic.presenter;
 
+import com.xemantic.githubusers.logic.event.Sink;
 import com.xemantic.githubusers.logic.event.Trigger;
 import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.view.UserView;
-import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.subjects.PublishSubject;
+import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.mockito.quality.Strictness;
 
+import static com.xemantic.githubusers.logic.test.TestEvents.noTrigger;
+import static com.xemantic.githubusers.logic.test.TestEvents.trigger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -44,18 +51,19 @@ import static org.mockito.Mockito.mock;
  */
 public class UserPresenterTest {
 
+  @Rule
+  public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+
+  @Mock
+  private UserView view;
+
   @Test
   public void start_user_shouldDisplayUser() {
     // given
-    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
-
+    TestObserver<UserSelectedEvent> userSelected$ = TestObserver.create();
     User user = mock(User.class);
-    given(user.getLogin()).willReturn("foo");
-
-    UserView view = mock(UserView.class);
-    given(view.observeSelection()).willReturn(Observable.empty());
-
-    UserPresenter presenter = new UserPresenter(userSelectedBus::onNext);
+    given(view.observeSelection()).willReturn(noTrigger());
+    UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
 
     // when
     presenter.start(user, view);
@@ -64,31 +72,28 @@ public class UserPresenterTest {
     then(view).should().displayUser(user);
     then(view).should().observeSelection();
     then(view).shouldHaveNoMoreInteractions();
+    userSelected$.assertNoValues();
   }
 
   @Test
   public void onUserSelected_view_shouldPostUserSelectedEvent() {
     // given
-    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
-    TestObserver<UserSelectedEvent> tracker = new TestObserver<>();
-    userSelectedBus.subscribe(tracker);
-
+    TestObserver<UserSelectedEvent> userSelected$ = TestObserver.create();
     User user = mock(User.class);
     given(user.getLogin()).willReturn("foo");
+    PublishSubject<Trigger> userSelectionIntent = PublishSubject.create();
+    given(view.observeSelection()).willReturn(userSelectionIntent);
 
-    UserView view = mock(UserView.class);
-    PublishSubject<Trigger> selectionTrigger = PublishSubject.create();
-    given(view.observeSelection()).willReturn(selectionTrigger);
-
-    UserPresenter presenter = new UserPresenter(userSelectedBus::onNext);
+    UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
     presenter.start(user, view);
 
     // when
-    selectionTrigger.onNext(Trigger.INSTANCE);
+    trigger(userSelectionIntent);
 
     // then
-    tracker.assertValueCount(1);
-    assertThat(tracker.values().get(0).getUser().getLogin(), is("foo"));
+    userSelected$.assertValueCount(1);
+    UserSelectedEvent event = userSelected$.values().get(0);
+    assertThat(event.getUser().getLogin(), is("foo"));
   }
 
 }
