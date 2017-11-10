@@ -36,7 +36,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
-import static com.xemantic.githubusers.logic.test.TestEvents.noTrigger;
+import static com.xemantic.githubusers.logic.test.TestEvents.noEvents;
 import static com.xemantic.githubusers.logic.test.TestEvents.trigger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -62,7 +62,7 @@ public class UserPresenterTest {
     // given
     TestObserver<UserSelectedEvent> userSelected$ = TestObserver.create();
     User user = mock(User.class);
-    given(view.observeSelection()).willReturn(noTrigger());
+    given(view.observeSelection()).willReturn(noEvents());
     UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
 
     // when

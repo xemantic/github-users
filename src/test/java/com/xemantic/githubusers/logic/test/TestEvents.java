@@ -41,7 +41,7 @@ public final class TestEvents {
     (Objects.requireNonNull(observer)).onNext(Trigger.INSTANCE);
   }
 
-  public static Observable<Trigger> noTrigger() {
+  public static <T> Observable<T> noEvents() {
     return Observable.empty();
   }
 
