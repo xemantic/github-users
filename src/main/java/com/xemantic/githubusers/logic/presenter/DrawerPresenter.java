@@ -23,10 +23,10 @@
 package com.xemantic.githubusers.logic.presenter;
 
 import com.xemantic.githubusers.logic.driver.UrlOpener;
+import com.xemantic.githubusers.logic.event.Sink;
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
 import com.xemantic.githubusers.logic.view.DrawerView;
 
-import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -39,30 +39,30 @@ public class DrawerPresenter {
 
   private final String projectUrl;
 
-  private final Consumer<SnackbarMessageEvent> snackbarMessageConsumer;
+  private final Sink<SnackbarMessageEvent> snackbarMessageSink;
 
   private final UrlOpener urlOpener;
 
   @Inject
   public DrawerPresenter(
       @Named("projectGitHubUrl") String projectUrl,
-      Consumer<SnackbarMessageEvent> snackbarMessageConsumer,
+      Sink<SnackbarMessageEvent> snackbarMessageSink,
       UrlOpener urlOpener) {
 
     this.projectUrl = projectUrl;
-    this.snackbarMessageConsumer = snackbarMessageConsumer;
+    this.snackbarMessageSink = snackbarMessageSink;
     this.urlOpener = urlOpener;
   }
 
   public void start(DrawerView view) {
-    view.observeOpenDrawerIntent()
-        .subscribe(t -> view.openDrawer(true));
-    view.observeReadAboutIntent()
-        .subscribe(t -> snackbarMessageConsumer.accept(new SnackbarMessageEvent("To be implemented soon")));
-    view.observeOpenProjectOnGitHubIntent()
-        .subscribe(t -> urlOpener.openUrl(projectUrl));
-    view.observeSelectLanguageIntent()
-        .subscribe(t -> snackbarMessageConsumer.accept(new SnackbarMessageEvent("To be implemented soon")));
+    view.observeOpenDrawerIntent().subscribe(t -> view.openDrawer(true));
+    view.observeReadAboutIntent().subscribe(t -> snackbarMessageSink.publish(
+        new SnackbarMessageEvent("To be implemented soon"))
+    );
+    view.observeOpenProjectOnGitHubIntent().subscribe(t -> urlOpener.openUrl(projectUrl));
+    view.observeSelectLanguageIntent().subscribe(t -> snackbarMessageSink.publish(
+        new SnackbarMessageEvent("To be implemented soon"))
+    );
   }
 
 }
