@@ -9,9 +9,12 @@ from Java to JavaScript and Objective-C.
 
 # Demo
 
-Web: https://github-users-web.appspot.com/
+This project provides only source code of the common logic. Here is
+the web version:
 
-For details check these separate projects prepared for each platform:
+https://github-users-web.appspot.com/
+
+See also: 
 
 * [github-users-web](https://github.com/xemantic/github-users-web)
 * [github-users-android](https://github.com/xemantic/github-users-android)
@@ -55,7 +58,7 @@ the application grows.
 As there is no blueprint from Google on how to build applications like Google Inbox, I decided
 to use my whole experience to "reverse engineer" possible approach and provide such a minimal project.
 I hope to push it even further in terms of reactive
-programming on top of RxJava as it is quite popular on Android, there is GWT port, and apparently
+programming on top of RxJava as it is quite popular on Android, there is a GWT port, and apparently
 it is possible to transpile the whole library to Objective-C.
 
 It does not matter so much what this application is doing and if it is useful at all.
@@ -107,44 +110,95 @@ article on Wikipedia.
 
 ## Reactive paradigm
 
-RxJava is a crucial component of this solution and supports:
+RxJava is a crucial component of this solution providing:
  
-* general EventBus which decouples presenters and therefore visual components
+* event distribution mechanism decoupling presenters and therefore also associated visual components
 * handling of asynchronous responses from remote web services
 * abstracting the way how UI events are streamed to the presenter logic
 
-## EventBus and events
+## Events
 
-The singleton [EventBus](src/main/java/com/xemantic/githubusers/logic/eventbus/EventBus.java)
-allows indirect communication of the presenters
-resolving traditional issue of direct coupling and component nesting in the UI code.
+Application events are defined in the
+[com.xemantic.githubusers.logic.event](src/main/java/com/xemantic/githubusers/logic/event/)
+package. Thanks to being separated from the rest of application logic, they can be
+easily used to decouple components (presenter logic).
 
-    UserQueryPresenter -- UserQueryEvent -----> +----------+
-    UserListPresenter <-- UserQueryEvent ------ | EventBus |
-    UserPresenter ------- UserSelectedEvent --> +----------+
+Event distribution is based on event channels where:
 
-Any other component might subscribe to EventBus in the frontend implementation
-to receive `UserSelectedEvent` and redirect view to GitHub profile in platform-specific way.
+* publisher is injected with [Sink](src/main/java/com/xemantic/githubusers/logic/event/Sink.java)
+* subscriber is injected with `Observable`
 
-Here is an example usage of the `EventBus`:
+Note: the original design was based on the EventBus concept, but @ibeca pointed out that thanks
+to typed injections, it is possible to eliminate explicit EventBus completely.
+
+### Emitting Events
 
 ```java
-eventBus.observe(StatusUpdateEvent.class) // returns Observable
-    .subscribeOn(renderingScheuler)
-    .subscribe(event -> view.displayStatus(event.getStatus()));
+public class FooPresenter {
+  
+  private final Sink<BarEvent> barSink;
+  
+  @Inject
+  public FooPresenter(Sink<BarEvent> barSink) {
+    this.barSink = barSink;    
+  }
+  
+  public void handleMyAction() {
+    barSink.publish(new BarEvent("bar"));
+  }
+  
+}
 ```
+
+Note: several `Sink`s of different event types can be injected.
+
+### Receiving Events
+ 
 ```java
-eventBus.post(new StatusUpdateEvent("OK"));
+public class BuzzPresenter {
+  
+  private final Observable<BarEvent> barEvent$;
+  
+  @Inject
+  public BuzzPresenter(Observable<BarEvent> barEvent$) {
+    this.barEvent$ = barEvent$;    
+  }
+  
+  public void start() {
+    barEvent$.subscribe(e -> log(e.getPayload()));
+  }
+  
+}
 ```
 
-Note: the `EventBus` and `EventTracker` utility from this projects will
-be extracted to separate library in the future.
+Note: several `Observable`s of different event types can be injected. 
 
-Only 3 special event types were defined for this app:
-* [Trigger](src/main/java/com/xemantic/githubusers/logic/event/Trigger.java) - used internally for payload-less signals coming from `Observables` 
-* [UserQueryEvent](src/main/java/com/xemantic/githubusers/logic/event/UserQueryEvent.java)
-* [UserSelectedEvent](src/main/java/com/xemantic/githubusers/logic/event/UserSelectedEvent.java)
+### Application Events vs Platform UI Events
 
+The only events defined in this project are application events. Platform events specific
+to UI will always come out of View interfaces and their `observe` + _Intent_ methods.
+
+Many UI events, like specific user intent received via click or touch event, will not
+carry any payload. They will be just marked with
+[Trigger](src/main/java/com/xemantic/githubusers/logic/event/Trigger.java) as an event
+type.
+
+### Presenter Lifecycle and Events
+
+When presenter is started it will usually:
+
+* subscribe to general application events
+* subscribe to events generated by UI actions
+
+The presenter logic defines how to react to these events, it might:
+
+* display something on view
+* call external service
+* change internal presenter state
+* publish general application events to be received by decoupled event consumers
+
+Most of these operations are easily testable with mocked view.
+ 
 ## Service Access Layer
 
 ### Service
@@ -170,23 +224,13 @@ When implementing these entities various methods might be used like
 
 ## View
 
-Only interfaces to be implemented here
-* [UserQueryView](src/main/java/com/xemantic/githubusers/logic/view/UserQueryView.java) - represents textual input where the query is provided
-* [UserListView](src/main/java/com/xemantic/githubusers/logic/view/UserListView.java)
-* [UserView](src/main/java/com/xemantic/githubusers/logic/view/UserView.java) - single element in the list.
-* [SnackbarView](src/main/java/com/xemantic/githubusers/logic/view/SnackbarView.java) -
-a [snackbar](https://material.io/guidelines/components/snackbars-toasts.html) implemented differently on each platform.
+See [com.xemantic.githubusers.logic.view](src/main/java/com/xemantic/githubusers/logic/view)
+package.
 
 ## Presenter
 
-The only part of the code which is not provided as interfaces.
-Each view is accompanied with respective presenter.
-
-* [UserQueryPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserQueryPresenter.java)
-* [UserListPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserListPresenter.java)
-(the most complex one)
-* [UserViewPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/UserPresenter.java)
-* [SnackbarPresenter](src/main/java/com/xemantic/githubusers/logic/presenter/SnackbarPresenter.java)
+See [com.xemantic.githubusers.logic.presenter](src/main/java/com/xemantic/githubusers/logic/presenter)
+package.
 
 Expectations for these presenters are visible in their
 [test cases](src/test/java/com/xemantic/githubusers/presenter)
