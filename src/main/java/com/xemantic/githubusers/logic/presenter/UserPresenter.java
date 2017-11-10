@@ -22,11 +22,11 @@
 
 package com.xemantic.githubusers.logic.presenter;
 
+import com.xemantic.githubusers.logic.event.Sink;
 import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.view.UserView;
 
-import java.util.function.Consumer;
 import javax.inject.Inject;
 
 /**
@@ -36,16 +36,16 @@ import javax.inject.Inject;
  */
 public class UserPresenter {
 
-  private final Consumer<UserSelectedEvent> userSelectedConsumer;
+  private final Sink<UserSelectedEvent> userSelectedSink;
 
   @Inject
-  public UserPresenter(Consumer<UserSelectedEvent> userSelectedConsumer) {
-    this.userSelectedConsumer = userSelectedConsumer;
+  public UserPresenter(Sink<UserSelectedEvent> userSelectedSink) {
+    this.userSelectedSink = userSelectedSink;
   }
 
   void start(User user, UserView view) {
     view.observeSelection()
-        .subscribe(s -> userSelectedConsumer.accept(new UserSelectedEvent(user)));
+        .subscribe(s -> userSelectedSink.publish(new UserSelectedEvent(user)));
     view.displayUser(user);
   }
 
