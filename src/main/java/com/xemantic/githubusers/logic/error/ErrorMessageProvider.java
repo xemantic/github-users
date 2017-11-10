@@ -22,26 +22,21 @@
 
 package com.xemantic.githubusers.logic.error;
 
-import io.reactivex.Observable;
+import io.reactivex.Maybe;
 
 /**
- * Analyzes {@link Throwable}s occurring in the streams of observed data.
- * The result can be used to resubscribe to {@link Observable}
- * after recoverable error like temporal connection error.
+ * Transforms {@link Throwable} into optional user-friendly message.
+ * Only specific runtime exceptions will be presented to end-user on the
+ * snackbar, and they should be already translated into concise
+ * non-technical form like {@code you are offline}. Note that specific
+ * technical exceptions indicating lack of internet access would be different
+ * on each platform depending on underlying HTTP transport mechanism used
+ * for web service calls.
  *
  * @author morisil
- * @see Observable#retry()
  */
-public interface ErrorAnalyzer {
+public interface ErrorMessageProvider {
 
-  /**
-   * Tells if supplied {@code throwable} is non-critical and therefore if action
-   * can possibly succeed on the next try. Examples: rate limit quota reached,
-   * connectivity problem, etc.
-   *
-   * @param throwable the error to analyze.
-   * @return the {@code true} if recoverable, {@code false} otherwise.
-   */
-  boolean isRecoverable(Throwable throwable);
+  Maybe<String> getMessage(Throwable throwable);
 
 }
