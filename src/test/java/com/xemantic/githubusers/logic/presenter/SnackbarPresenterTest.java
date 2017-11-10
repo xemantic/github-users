@@ -25,10 +25,14 @@ package com.xemantic.githubusers.logic.presenter;
 import com.xemantic.githubusers.logic.event.SnackbarMessageEvent;
 import com.xemantic.githubusers.logic.view.SnackbarView;
 import io.reactivex.subjects.PublishSubject;
+import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.mockito.quality.Strictness;
 
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
 
 /**
  * Test of the {@link SnackbarPresenter}.
@@ -37,12 +41,17 @@ import static org.mockito.Mockito.mock;
  */
 public class SnackbarPresenterTest {
 
+  @Rule
+  public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+
+  @Mock
+  private SnackbarView view;
+
   @Test
   public void start_noEventPosted_shouldDoNothingWithView() {
     // given
-    PublishSubject<SnackbarMessageEvent> snackbarMessageBus = PublishSubject.create();
-    SnackbarView view = mock(SnackbarView.class);
-    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessageBus);
+    PublishSubject<SnackbarMessageEvent> snackbarMessage$ = PublishSubject.create();
+    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessage$);
 
     // when
     presenter.start(view);
@@ -55,14 +64,12 @@ public class SnackbarPresenterTest {
   public void start_eventPosted_shouldShowTheMessage() {
     // given
     SnackbarMessageEvent event = new SnackbarMessageEvent("foo");
-    PublishSubject<SnackbarMessageEvent> snackbarMessageBus = PublishSubject.create();
-    SnackbarView view = mock(SnackbarView.class);
-
-    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessageBus);
+    PublishSubject<SnackbarMessageEvent> snackbarMessage$ = PublishSubject.create();
+    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessage$);
     presenter.start(view);
 
     // when
-    snackbarMessageBus.onNext(event);
+    snackbarMessage$.onNext(event);
 
     // then
     then(view).should().show("foo");
