@@ -22,21 +22,25 @@
 
 package com.xemantic.githubusers.logic.presenter;
 
+import com.xemantic.githubusers.logic.event.Sink;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.view.UserQueryView;
-import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.subjects.PublishSubject;
+import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.mockito.quality.Strictness;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.hasSize;
+import static com.xemantic.githubusers.logic.test.TestEvents.noEvents;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
 
 /**
  * Test of the {@link UserQueryPresenter}.
@@ -45,17 +49,18 @@ import static org.mockito.Mockito.mock;
  */
 public class UserQueryPresenterTest {
 
+  @Rule
+  public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+
+  @Mock
+  private UserQueryView view;
+
   @Test
   public void start_view_shouldOnlyBindToView() {
     // given
-    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
-    TestObserver<UserQueryEvent> tracker = new TestObserver<>();
-    userQueryBus.subscribe(tracker);
-
-    UserQueryView view = mock(UserQueryView.class);
-    given(view.observeQueryInput()).willReturn(Observable.empty());
-
-    UserQueryPresenter presenter = new UserQueryPresenter(userQueryBus::onNext);
+    TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
+    given(view.observeQueryInput()).willReturn(noEvents());
+    UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
 
     // when
     presenter.start(view);
@@ -63,50 +68,43 @@ public class UserQueryPresenterTest {
     // then
     then(view).should().observeQueryInput();
     then(view).shouldHaveNoMoreInteractions();
-    tracker.assertEmpty();
+    userQuery$.assertNoValues();
   }
 
   @Test
   public void onUserQuery_queryString_shouldPostEventWithQueryString() {
     // given
-    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
-    TestObserver<UserQueryEvent> tracker = new TestObserver<>();
-    userQueryBus.subscribe(tracker);
-
-    UserQueryView view = mock(UserQueryView.class);
-    PublishSubject<String> userQueryTrigger = PublishSubject.create();
-    given(view.observeQueryInput()).willReturn(userQueryTrigger);
-
-    UserQueryPresenter presenter = new UserQueryPresenter(userQueryBus::onNext);
+    TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
+    PublishSubject<String> userQueryIntent = PublishSubject.create();
+    given(view.observeQueryInput()).willReturn(userQueryIntent);
+    UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
     presenter.start(view);
+
     // when
-    userQueryTrigger.onNext("foo");
+    userQueryIntent.onNext("foo");
 
     // then
-    tracker.assertValueCount(1);
-    assertThat(tracker.values().get(0).getQuery(), is("foo"));
+    userQuery$.assertValueCount(1);
+    UserQueryEvent event = userQuery$.values().get(0);
+    assertThat(event.getQuery(), is("foo"));
   }
 
   @Test
   public void onUserQuery_2subsequentQueriesProvided_shouldPost2EventsWithQueryString() {
     // given
-    PublishSubject<UserQueryEvent> userQueryBus = PublishSubject.create();
-    TestObserver<UserQueryEvent> tracker = new TestObserver<>();
-    userQueryBus.subscribe(tracker);
-
-    UserQueryView view = mock(UserQueryView.class);
-    PublishSubject<String> userQueryTrigger = PublishSubject.create();
-    given(view.observeQueryInput()).willReturn(userQueryTrigger);
-
-    UserQueryPresenter presenter = new UserQueryPresenter(userQueryBus::onNext);
+    TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
+    PublishSubject<String> userQueryIntents = PublishSubject.create();
+    given(view.observeQueryInput()).willReturn(userQueryIntents);
+    UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
     presenter.start(view);
+
     // when
-    userQueryTrigger.onNext("foo");
-    userQueryTrigger.onNext("foobar");
+    userQueryIntents.onNext("foo");
+    userQueryIntents.onNext("foobar");
 
     // then
-    List<UserQueryEvent> events = tracker.values();
-    assertThat(events, hasSize(2));
+    userQuery$.assertValueCount(2);
+    List<UserQueryEvent> events = userQuery$.values();
     assertThat(events.get(0).getQuery(), is("foo"));
     assertThat(events.get(1).getQuery(), is("foobar"));
   }
