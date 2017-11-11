@@ -28,22 +28,15 @@ import io.reactivex.Observable;
 
 import javax.inject.Inject;
 
-/**
- * Presenter of the {@link SnackbarView}.
- *
- * @author morisil
- */
-public class SnackbarPresenter {
+public class SnackbarPresenter extends Presenter<SnackbarView> {
 
-  private final Observable<SnackbarMessageEvent> snackbarMessage$;
+  @Inject SnackbarPresenter(
+      SnackbarView view,
+      Observable<SnackbarMessageEvent> snackbarMessage$
+  ) {
+    super(view);
 
-  @Inject
-  public SnackbarPresenter(Observable<SnackbarMessageEvent> snackbarMessage$) {
-    this.snackbarMessage$ = snackbarMessage$;
-  }
-
-  public void start(SnackbarView view) {
-    snackbarMessage$.subscribe(e -> view.show(e.getMessage()));
+    register(snackbarMessage$.doOnNext(e -> view.show(e.getMessage())));
   }
 
 }

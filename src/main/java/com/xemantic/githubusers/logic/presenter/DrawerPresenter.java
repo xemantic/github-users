@@ -30,39 +30,27 @@ import com.xemantic.githubusers.logic.view.DrawerView;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-/**
- * Presenter of the {@link DrawerView}.
- *
- * @author morisil
- */
-public class DrawerPresenter {
+public class DrawerPresenter extends Presenter<DrawerView> {
 
-  private final String projectUrl;
-
-  private final Sink<SnackbarMessageEvent> snackbarMessageSink;
-
-  private final UrlOpener urlOpener;
-
-  @Inject
-  public DrawerPresenter(
+  @Inject DrawerPresenter(
+      DrawerView view,
       @Named("projectGitHubUrl") String projectUrl,
       Sink<SnackbarMessageEvent> snackbarMessageSink,
-      UrlOpener urlOpener) {
+      UrlOpener urlOpener
+  ) {
+    super(view);
 
-    this.projectUrl = projectUrl;
-    this.snackbarMessageSink = snackbarMessageSink;
-    this.urlOpener = urlOpener;
-  }
+    register(view.observeOpenDrawerIntent().doOnNext(t -> view.openDrawer(true)));
 
-  public void start(DrawerView view) {
-    view.observeOpenDrawerIntent().subscribe(t -> view.openDrawer(true));
-    view.observeReadAboutIntent().subscribe(t -> snackbarMessageSink.publish(
-        new SnackbarMessageEvent("To be implemented soon"))
-    );
-    view.observeOpenProjectOnGitHubIntent().subscribe(t -> urlOpener.openUrl(projectUrl));
-    view.observeSelectLanguageIntent().subscribe(t -> snackbarMessageSink.publish(
-        new SnackbarMessageEvent("To be implemented soon"))
-    );
+    register(view.observeReadAboutIntent()
+        .map(ev -> new SnackbarMessageEvent("To be implemented soon"))
+        .doOnNext(snackbarMessageSink::publish));
+
+    register(view.observeOpenProjectOnGitHubIntent().doOnNext(t -> urlOpener.openUrl(projectUrl)));
+
+    register(view.observeSelectLanguageIntent()
+        .map(ev -> new SnackbarMessageEvent("To be implemented soon"))
+        .doOnNext(snackbarMessageSink::publish));
   }
 
 }

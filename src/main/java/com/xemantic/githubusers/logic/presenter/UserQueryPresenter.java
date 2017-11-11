@@ -28,24 +28,17 @@ import com.xemantic.githubusers.logic.view.UserQueryView;
 
 import javax.inject.Inject;
 
-/**
- * Presenter of the {@link UserQueryView}.
- *
- * @author morisil
- */
-public class UserQueryPresenter {
+public class UserQueryPresenter extends Presenter<UserQueryView> {
 
-  private final Sink<UserQueryEvent> userQuerySink;
+  @Inject UserQueryPresenter(
+      UserQueryView view,
+      Sink<UserQueryEvent> userQuerySink
+  ) {
+    super(view);
 
-  @Inject
-  public UserQueryPresenter(Sink<UserQueryEvent> userQuerySink) {
-    this.userQuerySink = userQuerySink;
-  }
-
-  public void start(UserQueryView view) {
-    view.observeQueryInput().subscribe(query ->
-        userQuerySink.publish(new UserQueryEvent(query))
-    );
+    register(view.observeQueryInput()
+        .map(UserQueryEvent::new)
+        .doOnNext(userQuerySink::publish));
   }
 
 }
