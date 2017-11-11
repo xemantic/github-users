@@ -29,24 +29,18 @@ import com.xemantic.githubusers.logic.view.UserView;
 
 import javax.inject.Inject;
 
-/**
- * Presenter of the {@link UserView}.
- *
- * @author morisil
- */
-public class UserPresenter {
-
-  private final Sink<UserSelectedEvent> userSelectedSink;
+public class UserPresenter extends Presenter<UserView> {
 
   @Inject
-  public UserPresenter(Sink<UserSelectedEvent> userSelectedSink) {
-    this.userSelectedSink = userSelectedSink;
-  }
+  UserPresenter(
+      UserView view,
+      Sink<UserSelectedEvent> userSelectedSink
+  ) {
+    super(view);
 
-  void start(User user, UserView view) {
-    view.observeSelection()
-        .subscribe(s -> userSelectedSink.publish(new UserSelectedEvent(user)));
-    view.displayUser(user);
+    register(request().map(r -> (User) r.get("user"))
+        .doOnNext(view::displayUser)
+        .switchMap(u -> view.observeSelection().map(e -> u))
+        .doOnNext(u -> userSelectedSink.publish(new UserSelectedEvent(u))));
   }
-
 }

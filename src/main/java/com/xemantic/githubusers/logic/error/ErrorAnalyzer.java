@@ -20,25 +20,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.githubusers.logic.presenter;
+package com.xemantic.githubusers.logic.error;
 
-import com.xemantic.githubusers.logic.event.Sink;
-import com.xemantic.githubusers.logic.event.UserQueryEvent;
-import com.xemantic.githubusers.logic.view.UserQueryView;
+/**
+ * Analyzes {@link Throwable}s occurring in the streams of observed data.
+ * The result can be used to retry after recoverable error like temporal connection error.
+ */
+public interface ErrorAnalyzer {
 
-import javax.inject.Inject;
-
-public class UserQueryPresenter extends Presenter<UserQueryView> {
-
-  @Inject UserQueryPresenter(
-      UserQueryView view,
-      Sink<UserQueryEvent> userQuerySink
-  ) {
-    super(view);
-
-    register(view.observeQueryInput()
-        .map(UserQueryEvent::new)
-        .doOnNext(userQuerySink::publish));
-  }
+  /**
+   * Tells if supplied {@code throwable} is non-critical and therefore if action
+   * can possibly succeed on the next try. Examples: rate limit quota reached,
+   * connectivity problem, etc.
+   *
+   * @param throwable the error to analyze.
+   * @return the {@code true} if recoverable, {@code false} otherwise.
+   */
+  boolean isRecoverable(Throwable throwable);
 
 }
