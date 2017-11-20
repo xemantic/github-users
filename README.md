@@ -9,7 +9,7 @@ from Java to JavaScript and Objective-C.
 
 # Demo
 
-This project provides only source code of the common logic. Here is
+This project provides only source code of the shared logic. Here is
 the web version:
 
 https://github-users-web.appspot.com/
