@@ -31,6 +31,6 @@ import io.reactivex.Observable;
  */
 public interface UserQueryView {
 
-  Observable<String> observeQueryInput();
+  Observable<String> queryInput$();
 
 }

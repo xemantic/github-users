@@ -35,6 +35,6 @@ public interface UserView {
 
   void displayUser(User user);
 
-  Observable<Trigger> observeSelection();
+  Observable<Trigger> userSelection$();
 
 }

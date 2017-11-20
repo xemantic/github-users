@@ -58,14 +58,14 @@ public class UserQueryPresenterTest {
   public void start_view_shouldOnlyBindToView() {
     // given
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
-    given(view.observeQueryInput()).willReturn(noEvents());
+    given(view.queryInput$()).willReturn(noEvents());
     UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
 
     // when
     presenter.start(view);
 
     // then
-    then(view).should().observeQueryInput();
+    then(view).should().queryInput$();
     then(view).shouldHaveNoMoreInteractions();
     userQuery$.assertNoValues();
   }
@@ -75,7 +75,7 @@ public class UserQueryPresenterTest {
     // given
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
     PublishSubject<String> userQueryIntent = PublishSubject.create();
-    given(view.observeQueryInput()).willReturn(userQueryIntent);
+    given(view.queryInput$()).willReturn(userQueryIntent);
     UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
     presenter.start(view);
 
@@ -93,7 +93,7 @@ public class UserQueryPresenterTest {
     // given
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
     PublishSubject<String> userQueryIntents = PublishSubject.create();
-    given(view.observeQueryInput()).willReturn(userQueryIntents);
+    given(view.queryInput$()).willReturn(userQueryIntents);
     UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
     presenter.start(view);
 

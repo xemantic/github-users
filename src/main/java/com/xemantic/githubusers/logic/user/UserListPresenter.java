@@ -124,7 +124,7 @@ public class UserListPresenter {
 
     PublishSubject<Trigger> firstTrigger = PublishSubject.create();
 
-    requestSubscription = view.observeLoadMore()
+    requestSubscription = view.loadMoreIntent$()
         .mergeWith(firstTrigger)
         .doOnNext(e -> view.enableLoadMore(false))
         .flatMapSingle(e -> requestPage())
@@ -139,7 +139,7 @@ public class UserListPresenter {
     /*
       This needs some explanation, in the original code the whole request
       observable was started with Observable.just(Trigger.INSTANCE),
-      to push initial trigger, and then it was merged with the view.observeLoadMore().
+      to push initial trigger, and then it was merged with the view.loadMoreIntent$().
       But it didn't work as expected with the .retry() logic which is
       resubscribing to the whole already defined observable therefore it was also
       emitting the first trigger. For this reason I used PublishSubject to make the

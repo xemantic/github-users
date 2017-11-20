@@ -33,13 +33,13 @@ import io.reactivex.Observable;
  */
 public interface DrawerView {
 
-  Observable<Trigger> observeOpenDrawerIntent();
+  Observable<Trigger> openDrawerIntent$();
 
-  Observable<Trigger> observeReadAboutIntent();
+  Observable<Trigger> readAboutIntent$();
 
-  Observable<Trigger> observeOpenProjectOnGitHubIntent();
+  Observable<Trigger> openProjectOnGitHubIntent$();
 
-  Observable<Trigger> observeSelectLanguageIntent();
+  Observable<Trigger> selectLanguageIntent$();
 
   void openDrawer(boolean open);
 

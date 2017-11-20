@@ -54,12 +54,12 @@ public class DrawerPresenter {
   }
 
   public void start(DrawerView view) {
-    view.observeOpenDrawerIntent().subscribe(t -> view.openDrawer(true));
-    view.observeReadAboutIntent().subscribe(t -> snackbarMessageSink.publish(
+    view.openDrawerIntent$().subscribe(t -> view.openDrawer(true));
+    view.readAboutIntent$().subscribe(t -> snackbarMessageSink.publish(
         new SnackbarMessageEvent("To be implemented soon"))
     );
-    view.observeOpenProjectOnGitHubIntent().subscribe(t -> urlOpener.openUrl(projectUrl));
-    view.observeSelectLanguageIntent().subscribe(t -> snackbarMessageSink.publish(
+    view.openProjectOnGitHubIntent$().subscribe(t -> urlOpener.openUrl(projectUrl));
+    view.selectLanguageIntent$().subscribe(t -> snackbarMessageSink.publish(
         new SnackbarMessageEvent("To be implemented soon"))
     );
   }
