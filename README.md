@@ -128,7 +128,7 @@ Event distribution is based on event channels where:
 * publisher is injected with [Sink](src/main/java/com/xemantic/githubusers/logic/event/Sink.java)
 * subscriber is injected with `Observable`
 
-Note: the original design was based on the EventBus concept, but @ibeca pointed out that thanks
+Note: the original design was based on the EventBus concept, but @ibaca pointed out that thanks
 to typed injections, it is possible to eliminate explicit EventBus completely.
 
 ### Emitting Events
