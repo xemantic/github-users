@@ -63,10 +63,10 @@ public class DrawerPresenterTest {
   public void start_noInteraction_shouldObserveAllTheIntentsAndDoNothingWithView() {
     // given
     TestObserver<SnackbarMessageEvent> snackbarMessage$ = TestObserver.create();
-    given(view.observeOpenDrawerIntent()).willReturn(noEvents());
-    given(view.observeReadAboutIntent()).willReturn(noEvents());
-    given(view.observeOpenProjectOnGitHubIntent()).willReturn(noEvents());
-    given(view.observeSelectLanguageIntent()).willReturn(noEvents());
+    given(view.openDrawerIntent$()).willReturn(noEvents());
+    given(view.readAboutIntent$()).willReturn(noEvents());
+    given(view.openProjectOnGitHubIntent$()).willReturn(noEvents());
+    given(view.selectLanguageIntent$()).willReturn(noEvents());
 
     DrawerPresenter presenter = new DrawerPresenter(
         "http://foo.com",
@@ -78,10 +78,10 @@ public class DrawerPresenterTest {
     presenter.start(view);
 
     // then
-    verify(view).observeOpenDrawerIntent();
-    verify(view).observeReadAboutIntent();
-    verify(view).observeOpenProjectOnGitHubIntent();
-    verify(view).observeSelectLanguageIntent();
+    verify(view).openDrawerIntent$();
+    verify(view).readAboutIntent$();
+    verify(view).openProjectOnGitHubIntent$();
+    verify(view).selectLanguageIntent$();
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).shouldHaveZeroInteractions();
     snackbarMessage$.assertNoValues();
@@ -92,10 +92,10 @@ public class DrawerPresenterTest {
     // given
     TestObserver<SnackbarMessageEvent> snackbarMessage$ = new TestObserver<>();
     PublishSubject<Trigger> openDrawerIntent = PublishSubject.create();
-    given(view.observeOpenDrawerIntent()).willReturn(openDrawerIntent);
-    given(view.observeReadAboutIntent()).willReturn(noEvents());
-    given(view.observeOpenProjectOnGitHubIntent()).willReturn(noEvents());
-    given(view.observeSelectLanguageIntent()).willReturn(noEvents());
+    given(view.openDrawerIntent$()).willReturn(openDrawerIntent);
+    given(view.readAboutIntent$()).willReturn(noEvents());
+    given(view.openProjectOnGitHubIntent$()).willReturn(noEvents());
+    given(view.selectLanguageIntent$()).willReturn(noEvents());
     DrawerPresenter presenter = new DrawerPresenter(
         "http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
@@ -105,10 +105,10 @@ public class DrawerPresenterTest {
     trigger(openDrawerIntent);
 
     // then
-    verify(view).observeOpenDrawerIntent();
-    verify(view).observeReadAboutIntent();
-    verify(view).observeOpenProjectOnGitHubIntent();
-    verify(view).observeSelectLanguageIntent();
+    verify(view).openDrawerIntent$();
+    verify(view).readAboutIntent$();
+    verify(view).openProjectOnGitHubIntent$();
+    verify(view).selectLanguageIntent$();
     verify(view).openDrawer(true);
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).shouldHaveZeroInteractions();
@@ -120,10 +120,10 @@ public class DrawerPresenterTest {
     // given
     TestObserver<SnackbarMessageEvent> snackbarMessage$ = new TestObserver<>();
     PublishSubject<Trigger> readAboutIntent = PublishSubject.create();
-    given(view.observeOpenDrawerIntent()).willReturn(noEvents());
-    given(view.observeReadAboutIntent()).willReturn(readAboutIntent);
-    given(view.observeOpenProjectOnGitHubIntent()).willReturn(noEvents());
-    given(view.observeSelectLanguageIntent()).willReturn(noEvents());
+    given(view.openDrawerIntent$()).willReturn(noEvents());
+    given(view.readAboutIntent$()).willReturn(readAboutIntent);
+    given(view.openProjectOnGitHubIntent$()).willReturn(noEvents());
+    given(view.selectLanguageIntent$()).willReturn(noEvents());
     DrawerPresenter presenter = new DrawerPresenter(
         "http://foo.com",
         Sink.of(snackbarMessage$),
@@ -135,10 +135,10 @@ public class DrawerPresenterTest {
     trigger(readAboutIntent);
 
     // then
-    verify(view).observeOpenDrawerIntent();
-    verify(view).observeReadAboutIntent();
-    verify(view).observeOpenProjectOnGitHubIntent();
-    verify(view).observeSelectLanguageIntent();
+    verify(view).openDrawerIntent$();
+    verify(view).readAboutIntent$();
+    verify(view).openProjectOnGitHubIntent$();
+    verify(view).selectLanguageIntent$();
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).shouldHaveZeroInteractions();
     snackbarMessage$.assertValueCount(1);
@@ -151,10 +151,10 @@ public class DrawerPresenterTest {
     // given
     TestObserver<SnackbarMessageEvent> snackbarMessage$ = TestObserver.create();
     PublishSubject<Trigger> openProjectIntent = PublishSubject.create();
-    given(view.observeOpenDrawerIntent()).willReturn(noEvents());
-    given(view.observeReadAboutIntent()).willReturn(noEvents());
-    given(view.observeOpenProjectOnGitHubIntent()).willReturn(openProjectIntent);
-    given(view.observeSelectLanguageIntent()).willReturn(noEvents());
+    given(view.openDrawerIntent$()).willReturn(noEvents());
+    given(view.readAboutIntent$()).willReturn(noEvents());
+    given(view.openProjectOnGitHubIntent$()).willReturn(openProjectIntent);
+    given(view.selectLanguageIntent$()).willReturn(noEvents());
     DrawerPresenter presenter = new DrawerPresenter(
         "http://foo.com",
         Sink.of(snackbarMessage$),
@@ -166,10 +166,10 @@ public class DrawerPresenterTest {
     trigger(openProjectIntent);
 
     // then
-    verify(view).observeOpenDrawerIntent();
-    verify(view).observeReadAboutIntent();
-    verify(view).observeOpenProjectOnGitHubIntent();
-    verify(view).observeSelectLanguageIntent();
+    verify(view).openDrawerIntent$();
+    verify(view).readAboutIntent$();
+    verify(view).openProjectOnGitHubIntent$();
+    verify(view).selectLanguageIntent$();
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).should().openUrl("http://foo.com");
     then(urlOpener).shouldHaveNoMoreInteractions();
@@ -180,10 +180,10 @@ public class DrawerPresenterTest {
     // given
     TestObserver<SnackbarMessageEvent> snackbarMessage$ = new TestObserver<>();
     PublishSubject<Trigger> selectLanguageIntent = PublishSubject.create();
-    given(view.observeOpenDrawerIntent()).willReturn(noEvents());
-    given(view.observeReadAboutIntent()).willReturn(noEvents());
-    given(view.observeOpenProjectOnGitHubIntent()).willReturn(noEvents());
-    given(view.observeSelectLanguageIntent()).willReturn(selectLanguageIntent);
+    given(view.openDrawerIntent$()).willReturn(noEvents());
+    given(view.readAboutIntent$()).willReturn(noEvents());
+    given(view.openProjectOnGitHubIntent$()).willReturn(noEvents());
+    given(view.selectLanguageIntent$()).willReturn(selectLanguageIntent);
     DrawerPresenter presenter = new DrawerPresenter(
         "http://foo.com",
         Sink.of(snackbarMessage$),
@@ -195,10 +195,10 @@ public class DrawerPresenterTest {
     trigger(selectLanguageIntent);
 
     // then
-    verify(view).observeOpenDrawerIntent();
-    verify(view).observeReadAboutIntent();
-    verify(view).observeOpenProjectOnGitHubIntent();
-    verify(view).observeSelectLanguageIntent();
+    verify(view).openDrawerIntent$();
+    verify(view).readAboutIntent$();
+    verify(view).openProjectOnGitHubIntent$();
+    verify(view).selectLanguageIntent$();
     then(view).shouldHaveNoMoreInteractions();
     then(urlOpener).shouldHaveZeroInteractions();
     snackbarMessage$.assertValueCount(1);

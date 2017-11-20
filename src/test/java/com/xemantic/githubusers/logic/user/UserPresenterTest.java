@@ -61,7 +61,7 @@ public class UserPresenterTest {
     // given
     TestObserver<UserSelectedEvent> userSelected$ = TestObserver.create();
     User user = mock(User.class);
-    given(view.observeSelection()).willReturn(noEvents());
+    given(view.userSelection$()).willReturn(noEvents());
     UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
 
     // when
@@ -69,7 +69,7 @@ public class UserPresenterTest {
 
     // then
     then(view).should().displayUser(user);
-    then(view).should().observeSelection();
+    then(view).should().userSelection$();
     then(view).shouldHaveNoMoreInteractions();
     userSelected$.assertNoValues();
   }
@@ -81,7 +81,7 @@ public class UserPresenterTest {
     User user = mock(User.class);
     given(user.getLogin()).willReturn("foo");
     PublishSubject<Trigger> userSelectionIntent = PublishSubject.create();
-    given(view.observeSelection()).willReturn(userSelectionIntent);
+    given(view.userSelection$()).willReturn(userSelectionIntent);
 
     UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
     presenter.start(user, view);

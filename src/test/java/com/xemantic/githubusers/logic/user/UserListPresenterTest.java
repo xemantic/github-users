@@ -142,7 +142,7 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
     UserPresenter userPresenter = mock(UserPresenter.class);
 
-    given(view.observeLoadMore()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noEvents());
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
@@ -160,7 +160,7 @@ public class UserListPresenterTest {
 
     // then
     InOrder inOrder = inOrder(view, userService, userPresenter);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
     inOrder.verify(view).clear();
@@ -186,7 +186,7 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
     UserPresenter userPresenter = mock(UserPresenter.class);
 
-    given(view.observeLoadMore()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noEvents());
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
@@ -204,7 +204,7 @@ public class UserListPresenterTest {
 
     // then
     InOrder inOrder = inOrder(view, userService, userPresenter);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, pageSize);
     inOrder.verify(view).clear();
@@ -243,7 +243,7 @@ public class UserListPresenterTest {
     given(userPresenterProvider.get()).willReturn(userPresenter1, userPresenter2);
 
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
-    given(view.observeLoadMore()).willReturn(loadMoreIntent);
+    given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
@@ -269,7 +269,7 @@ public class UserListPresenterTest {
         userPresenter1,
         userPresenter2
     );
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, 1);
     inOrder.verify(view).clear();
@@ -306,7 +306,7 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
 
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
-    given(view.observeLoadMore()).willReturn(loadMoreIntent);
+    given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
@@ -326,7 +326,7 @@ public class UserListPresenterTest {
     }
 
     // then
-    verify(view).observeLoadMore();
+    verify(view).loadMoreIntent$();
     verify(view).clear();
     verify(userService, times(10)).find(eq("foo"), anyInt(), eq(DEFAULT_PAGE_SIZE));
     verify(view, times(1000)).add(userView);
@@ -358,7 +358,7 @@ public class UserListPresenterTest {
         .willReturn(response1$.singleOrError())
         .willReturn(response2$.singleOrError());
 
-    given(view.observeLoadMore()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noEvents());
 
     UserView userView = mock(UserView.class);
 
@@ -409,10 +409,10 @@ public class UserListPresenterTest {
     assertThat(response2$.hasObservers(), is(false));
 
     InOrder inOrder = inOrder(view, userService);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("bar", 1, DEFAULT_PAGE_SIZE);
     inOrder.verify(view).clear();
@@ -449,7 +449,7 @@ public class UserListPresenterTest {
 
     given(errorAnalyzer.test(any(Integer.class), any(Throwable.class))).willReturn(true);
 
-    given(view.observeLoadMore()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noEvents());
 
     UserView userView = mock(UserView.class);
 
@@ -469,7 +469,7 @@ public class UserListPresenterTest {
 
     // then
     InOrder inOrder = inOrder(view, userService, errorAnalyzer);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, pageSize);
     inOrder.verify(errorAnalyzer).test(1, error); // 1 - first attempt, will retry
@@ -500,7 +500,7 @@ public class UserListPresenterTest {
     given(errorAnalyzer.test(any(Integer.class), any(Throwable.class))).willReturn(false);
 
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
-    given(view.observeLoadMore()).willReturn(loadMoreIntent);
+    given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserView userView = mock(UserView.class);
 
@@ -521,7 +521,7 @@ public class UserListPresenterTest {
 
     // then
     InOrder inOrder = inOrder(view, userService, errorAnalyzer);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, pageSize);
     inOrder.verify(view).enableLoadMore(true);
@@ -546,7 +546,7 @@ public class UserListPresenterTest {
     given(userService.find("foo", 1, DEFAULT_PAGE_SIZE)).willReturn(request$.singleOrError());
 
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
-    given(view.observeLoadMore()).willReturn(loadMoreIntent);
+    given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
@@ -569,7 +569,7 @@ public class UserListPresenterTest {
 
     // then
     InOrder inOrder = inOrder(view, userService);
-    inOrder.verify(view).observeLoadMore();
+    inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
     verifyNoMoreInteractions(view, userService, errorAnalyzer);

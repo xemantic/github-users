@@ -24,7 +24,6 @@ package com.xemantic.githubusers.logic.user;
 
 import com.xemantic.ankh.shared.event.Sink;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
-import com.xemantic.githubusers.logic.user.UserQueryView;
 
 import javax.inject.Inject;
 
@@ -43,7 +42,7 @@ public class UserQueryPresenter {
   }
 
   public void start(UserQueryView view) {
-    view.observeQueryInput().subscribe(query ->
+    view.queryInput$().subscribe(query ->
         userQuerySink.publish(new UserQueryEvent(query))
     );
   }

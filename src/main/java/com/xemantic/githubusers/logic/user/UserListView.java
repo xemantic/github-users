@@ -36,7 +36,7 @@ public interface UserListView {
 
   void clear();
 
-  Observable<Trigger> observeLoadMore();
+  Observable<Trigger> loadMoreIntent$();
 
   void enableLoadMore(boolean enabled);
 
