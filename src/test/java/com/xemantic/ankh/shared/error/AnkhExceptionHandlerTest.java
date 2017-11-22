@@ -37,18 +37,17 @@ import org.mockito.quality.Strictness;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
- * Test of the {@link UncaughtExceptionHandler}.
+ * Test of the {@link AnkhExceptionHandler}.
  *
  * @author morisil
  */
-public class UncaughtExceptionHandlerTest {
+public class AnkhExceptionHandlerTest {
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
@@ -70,7 +69,7 @@ public class UncaughtExceptionHandlerTest {
     // given
     Exception exception = new Exception();
     given(errorMessageProvider.getMessage(exception)).willReturn(Maybe.empty());
-    UncaughtExceptionHandler handler = new UncaughtExceptionHandler(
+    AnkhExceptionHandler handler = new AnkhExceptionHandler(
         logger,
         errorMessageProvider,
         snackbarMessageSink
@@ -82,7 +81,7 @@ public class UncaughtExceptionHandlerTest {
     // then
     verify(logger).log(Level.SEVERE, "Uncaught Exception", exception);
     verify(errorMessageProvider).getMessage(exception);
-    assertThat(snackbarMessageEventCaptor.getAllValues().isEmpty(), is(true));
+    assertThat(snackbarMessageEventCaptor.getAllValues()).isEmpty();
     verifyNoMoreInteractions(
         errorMessageProvider,
         snackbarMessageSink
@@ -94,7 +93,7 @@ public class UncaughtExceptionHandlerTest {
     // given
     Exception exception = new Exception();
     given(errorMessageProvider.getMessage(exception)).willReturn(Maybe.just("foo"));
-    UncaughtExceptionHandler handler = new UncaughtExceptionHandler(
+    AnkhExceptionHandler handler = new AnkhExceptionHandler(
         logger,
         errorMessageProvider,
         snackbarMessageSink
@@ -107,7 +106,7 @@ public class UncaughtExceptionHandlerTest {
     verify(logger).log(Level.SEVERE, "Uncaught Exception", exception);
     verify(errorMessageProvider).getMessage(exception);
     verify(snackbarMessageSink).publish(snackbarMessageEventCaptor.capture());
-    assertThat(snackbarMessageEventCaptor.getValue().getMessage(), is("foo"));
+    assertThat(snackbarMessageEventCaptor.getValue().getMessage()).isEqualTo("foo");
     verifyNoMoreInteractions(
         errorMessageProvider,
         snackbarMessageSink

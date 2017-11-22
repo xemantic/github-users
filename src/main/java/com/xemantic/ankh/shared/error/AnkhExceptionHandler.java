@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  * @author morisil
  */
 @Singleton
-public class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+public class AnkhExceptionHandler implements Thread.UncaughtExceptionHandler {
 
   private final Logger logger;
 
@@ -50,7 +50,7 @@ public class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler
   private final Sink<SnackbarMessageEvent> snackbarMessageSink;
 
   @Inject
-  public UncaughtExceptionHandler(
+  public AnkhExceptionHandler(
       Logger logger,
       ErrorMessageProvider errorMessageProvider,
       Sink<SnackbarMessageEvent> snackbarMessageSink
@@ -66,6 +66,12 @@ public class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler
     errorMessageProvider.getMessage(throwable)
         .map(SnackbarMessageEvent::new)
         .subscribe(snackbarMessageSink::publish);
+  }
+
+  public static void uncaught(Throwable error) {
+    Thread currentThread = Thread.currentThread();
+    Thread.UncaughtExceptionHandler handler = currentThread.getUncaughtExceptionHandler();
+    handler.uncaughtException(currentThread, error);
   }
 
 }
