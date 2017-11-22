@@ -20,29 +20,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.ankh.test;
-
-import com.xemantic.ankh.shared.event.Trigger;
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-
-import java.util.Objects;
+package com.xemantic.ankh.shared.request;
 
 /**
- * Test util class which allows simplification of presenter test logic.
+ * Test of the {@link Page}.
  *
  * @author morisil
  */
-public final class TestEvents {
+public class PageTest {
 
-  private TestEvents() { }
-
-  public static void trigger(Observer<Trigger> observer) {
-    (Objects.requireNonNull(observer)).onNext(Trigger.INSTANCE);
-  }
-
-  public static <T> Observable<T> noEvents() {
-    return Observable.empty();
-  }
+  // TODO write missing tests after moving to ankh library
 
 }
