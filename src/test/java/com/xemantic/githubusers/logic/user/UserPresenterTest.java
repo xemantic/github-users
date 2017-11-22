@@ -35,10 +35,9 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
-import static com.xemantic.ankh.test.TestEvents.noEvents;
-import static com.xemantic.ankh.test.TestEvents.trigger;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static com.xemantic.ankh.shared.event.Trigger.fire;
+import static com.xemantic.ankh.shared.event.Trigger.noTriggers;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -61,7 +60,7 @@ public class UserPresenterTest {
     // given
     TestObserver<UserSelectedEvent> userSelected$ = TestObserver.create();
     User user = mock(User.class);
-    given(view.userSelection$()).willReturn(noEvents());
+    given(view.userSelection$()).willReturn(noTriggers());
     UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
 
     // when
@@ -87,12 +86,12 @@ public class UserPresenterTest {
     presenter.start(user, view);
 
     // when
-    trigger(userSelectionIntent);
+    fire(userSelectionIntent);
 
     // then
     userSelected$.assertValueCount(1);
     UserSelectedEvent event = userSelected$.values().get(0);
-    assertThat(event.getUser().getLogin(), is("foo"));
+    assertThat(event.getUser().getLogin()).isEqualTo("foo");
   }
 
 }

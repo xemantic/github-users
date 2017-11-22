@@ -23,6 +23,7 @@
 package com.xemantic.githubusers.logic.user;
 
 import com.xemantic.ankh.shared.event.Sink;
+import com.xemantic.ankh.shared.presenter.Presenter;
 import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.githubusers.logic.model.User;
 
@@ -33,7 +34,7 @@ import javax.inject.Inject;
  *
  * @author morisil
  */
-public class UserPresenter {
+public class UserPresenter extends Presenter {
 
   private final Sink<UserSelectedEvent> userSelectedSink;
 
@@ -43,9 +44,9 @@ public class UserPresenter {
   }
 
   public void start(User user, UserView view) {
-    view.userSelection$()
+    on(view.userSelection$()
         .map(trigger -> new UserSelectedEvent(user))
-        .subscribe(userSelectedSink::publish);
+    ).call(userSelectedSink::publish);
     view.displayUser(user);
   }
 
