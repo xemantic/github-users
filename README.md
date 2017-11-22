@@ -96,7 +96,7 @@ Only minimal set of Java 8 classes is used plus:
 * [RxJava](https://github.com/ReactiveX/RxJava) - Reactive Extensions for the JVM
 * [junit](http://junit.org/junit4/) - JUnit is a simple framework to write repeatable tests
 * [mockito](http://site.mockito.org/) - Tasty mocking framework for unit tests in Java
-* [hamcrest](http://hamcrest.org/JavaHamcrest/) - Matchers that can be combined to create flexible expressions of intent 
+* [AssertJ](http://joel-costigliola.github.io/assertj/) - Fluent assertions for java 
 
 These popular dependencies will either have emulation on all the platforms or
 be transpiled to the native code.
