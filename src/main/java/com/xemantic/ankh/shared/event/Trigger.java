@@ -23,10 +23,13 @@
 package com.xemantic.ankh.shared.event;
 
 import io.reactivex.Observable;
+import io.reactivex.Observer;
+
+import java.util.Objects;
 
 /**
  * Trigger carries no payload but represents a signal.
- * This class can be used as a type of {@link Observable}s
+ * This class can be used as a type of {@link Observable}
  * signaling user intents after translating them from technical
  * UI events like mouse clicks.
  *
@@ -37,5 +40,13 @@ public final class Trigger {
   public static final Trigger INSTANCE = new Trigger();
 
   private Trigger() { /* no instantiation */ }
+
+  public static void fire(Observer<Trigger> observer) {
+    (Objects.requireNonNull(observer)).onNext(Trigger.INSTANCE);
+  }
+
+  public static <T> Observable<T> noTriggers() {
+    return Observable.empty();
+  }
 
 }
