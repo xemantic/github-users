@@ -23,6 +23,7 @@
 package com.xemantic.ankh.shared.event;
 
 import io.reactivex.Observer;
+import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -31,8 +32,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -60,7 +59,7 @@ public class SinkTest {
     Sink sink = Sink.of(observer);
 
     // then
-    assertThat(sink, notNullValue());
+    Assertions.assertThat(sink).isNotNull();
     verifyNoMoreInteractions(observer);
   }
 
