@@ -25,6 +25,7 @@ package com.xemantic.githubusers.logic.drawer;
 import com.xemantic.ankh.shared.driver.UrlOpener;
 import com.xemantic.ankh.shared.event.Sink;
 import com.xemantic.ankh.shared.event.SnackbarMessageEvent;
+import com.xemantic.ankh.shared.presenter.Presenter;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -34,7 +35,7 @@ import javax.inject.Named;
  *
  * @author morisil
  */
-public class DrawerPresenter {
+public class DrawerPresenter extends Presenter {
 
   private final String projectUrl;
 
@@ -54,12 +55,13 @@ public class DrawerPresenter {
   }
 
   public void start(DrawerView view) {
-    view.openDrawerIntent$().subscribe(t -> view.openDrawer(true));
-    view.readAboutIntent$().subscribe(t -> snackbarMessageSink.publish(
+    on(view.openDrawerIntent$()).call(t -> view.openDrawer(true));
+    on(view.readAboutIntent$()).call(t -> snackbarMessageSink.publish(
         new SnackbarMessageEvent("To be implemented soon"))
     );
-    view.openProjectOnGitHubIntent$().subscribe(t -> urlOpener.openUrl(projectUrl));
-    view.selectLanguageIntent$().subscribe(t -> snackbarMessageSink.publish(
+    on(view.openProjectOnGitHubIntent$())
+        .call(t -> urlOpener.openUrl(projectUrl));
+    on(view.selectLanguageIntent$()).call(t -> snackbarMessageSink.publish(
         new SnackbarMessageEvent("To be implemented soon"))
     );
   }
