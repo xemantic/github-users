@@ -58,8 +58,8 @@ public class ExpectedUncaughtExceptionTest {
   public void evaluate_noExpectedErrorsAndNothingThrown_shouldOnlyEvaluateOriginalStatement() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
 
     // when
     statement.evaluate();
@@ -73,14 +73,14 @@ public class ExpectedUncaughtExceptionTest {
   public void expect_noExceptionThrownButOneExpected_shouldFail() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
     thrown.expectMessage("No uncaught exception occurred:\n" +
         "Expected: <java.lang.Exception>");
 
     // when
-    expectedError.expect(Exception.class);
+    uncaughtThrown.expect(Exception.class);
     statement.evaluate();
 
     // then should fail
@@ -90,8 +90,8 @@ public class ExpectedUncaughtExceptionTest {
   public void expectMessage_noExceptionThrownButMessageExpected_shouldFail() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
     thrown.expectMessage(
         "No uncaught exception occurred, but expected one with message: \n" +
@@ -99,7 +99,7 @@ public class ExpectedUncaughtExceptionTest {
     );
 
     // when
-    expectedError.expectMessage("foo");
+    uncaughtThrown.expectMessage("foo");
     statement.evaluate();
 
     // then should fail
@@ -109,15 +109,15 @@ public class ExpectedUncaughtExceptionTest {
   public void expectExceptionAndMessage_noExceptionThrown_shouldFail() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
     thrown.expectMessage("No uncaught exception occurred:\n" +
         "Expected: <java.lang.Exception>");
 
     // when
-    expectedError.expect(Exception.class);
-    expectedError.expectMessage("foo");
+    uncaughtThrown.expect(Exception.class);
+    uncaughtThrown.expectMessage("foo");
     statement.evaluate();
 
     // then should fail
@@ -126,13 +126,13 @@ public class ExpectedUncaughtExceptionTest {
   @Test
   public void expect_calledTwice_shouldFail() throws Throwable {
     // given
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    expectedError.expect(Exception.class);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    uncaughtThrown.expect(Exception.class);
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("Already expecting: class java.lang.Exception");
 
     // when
-    expectedError.expect(RuntimeException.class);
+    uncaughtThrown.expect(RuntimeException.class);
 
     // then should fail
   }
@@ -140,11 +140,11 @@ public class ExpectedUncaughtExceptionTest {
   @Test
   public void expect_calledWithNull_shouldFail() throws Throwable {
     // given
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
     thrown.expect(NullPointerException.class);
 
     // when
-    expectedError.expect(null);
+    uncaughtThrown.expect(null);
 
     // then should fail
   }
@@ -152,13 +152,13 @@ public class ExpectedUncaughtExceptionTest {
   @Test
   public void expectMessage_calledTwice_shouldFail() throws Throwable {
     // given
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    expectedError.expectMessage("foo");
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    uncaughtThrown.expectMessage("foo");
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("Already expecting message: foo");
 
     // when
-    expectedError.expectMessage("bar");
+    uncaughtThrown.expectMessage("bar");
 
     // then should fail
   }
@@ -166,11 +166,11 @@ public class ExpectedUncaughtExceptionTest {
   @Test
   public void expectMessage_calledWithNull_shouldFail() throws Throwable {
     // given
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
     thrown.expect(NullPointerException.class);
 
     // when
-    expectedError.expectMessage(null);
+    uncaughtThrown.expectMessage(null);
 
     // then should fail
   }
@@ -186,10 +186,10 @@ public class ExpectedUncaughtExceptionTest {
             .subscribe();
       }
     };
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    expectedError.expect(OnErrorNotImplementedException.class);
-    expectedError.expectMessage("foo");
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    uncaughtThrown.expect(OnErrorNotImplementedException.class);
+    uncaughtThrown.expectMessage("foo");
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
 
     // when
     statement.evaluate();
@@ -209,10 +209,10 @@ public class ExpectedUncaughtExceptionTest {
             .subscribe();
       }
     };
-    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
-    expectedError.expect(Exception.class);
-    expectedError.expectMessage("foo");
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    uncaughtThrown.expect(Exception.class);
+    uncaughtThrown.expectMessage("foo");
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
     thrown.expectMessage("Uncaught exception occurred, " +
         "but is different than expected:\n" +
