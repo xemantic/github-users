@@ -35,9 +35,8 @@ import org.mockito.quality.Strictness;
 
 import java.util.List;
 
-import static com.xemantic.ankh.test.TestEvents.noEvents;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static com.xemantic.ankh.shared.event.Trigger.noTriggers;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -58,7 +57,7 @@ public class UserQueryPresenterTest {
   public void start_view_shouldOnlyBindToView() {
     // given
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
-    given(view.queryInput$()).willReturn(noEvents());
+    given(view.queryInput$()).willReturn(noTriggers());
     UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
 
     // when
@@ -84,8 +83,9 @@ public class UserQueryPresenterTest {
 
     // then
     userQuery$.assertValueCount(1);
-    UserQueryEvent event = userQuery$.values().get(0);
-    assertThat(event.getQuery(), is("foo"));
+    assertThat(userQuery$.values())
+        .extracting(UserQueryEvent::getQuery)
+        .containsOnly("foo");
   }
 
   @Test
@@ -99,13 +99,14 @@ public class UserQueryPresenterTest {
 
     // when
     userQueryIntents.onNext("foo");
-    userQueryIntents.onNext("foobar");
+    userQueryIntents.onNext("bar");
 
     // then
     userQuery$.assertValueCount(2);
     List<UserQueryEvent> events = userQuery$.values();
-    assertThat(events.get(0).getQuery(), is("foo"));
-    assertThat(events.get(1).getQuery(), is("foobar"));
+    assertThat(events)
+        .extracting(UserQueryEvent::getQuery)
+        .containsSequence("foo", "bar");
   }
 
 }

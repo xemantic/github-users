@@ -23,6 +23,7 @@
 package com.xemantic.githubusers.logic.user;
 
 import com.xemantic.ankh.shared.event.Sink;
+import com.xemantic.ankh.shared.presenter.Presenter;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 
 import javax.inject.Inject;
@@ -32,7 +33,7 @@ import javax.inject.Inject;
  *
  * @author morisil
  */
-public class UserQueryPresenter {
+public class UserQueryPresenter extends Presenter {
 
   private final Sink<UserQueryEvent> userQuerySink;
 
@@ -42,9 +43,10 @@ public class UserQueryPresenter {
   }
 
   public void start(UserQueryView view) {
-    view.queryInput$().subscribe(query ->
-        userQuerySink.publish(new UserQueryEvent(query))
-    );
+    on(view.queryInput$())
+        .call(query ->
+            userQuerySink.publish(new UserQueryEvent(query))
+        );
   }
 
 }
