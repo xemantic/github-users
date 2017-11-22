@@ -25,7 +25,6 @@ package com.xemantic.ankh.shared.error;
 import com.xemantic.ankh.shared.event.Sink;
 import com.xemantic.ankh.shared.event.SnackbarMessageEvent;
 import io.reactivex.Maybe;
-import io.reactivex.exceptions.OnErrorNotImplementedException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -35,6 +34,9 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -42,17 +44,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
- * Test of the {@link RxErrorHandler}.
+ * Test of the {@link UncaughtExceptionHandler}.
  *
  * @author morisil
  */
-public class RxErrorHandlerTest {
+public class UncaughtExceptionHandlerTest {
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
 
   @Mock
-  private Thread.UncaughtExceptionHandler exceptionHandler;
+  private Logger logger;
 
   @Mock
   private ErrorMessageProvider errorMessageProvider;
@@ -64,24 +66,24 @@ public class RxErrorHandlerTest {
   private ArgumentCaptor<SnackbarMessageEvent> snackbarMessageEventCaptor;
 
   @Test
-  public void accept_exceptionIsNotReportable_shouldHandleException() throws Exception {
+  public void accept_exceptionIsNotReportable_shouldHandleExceptionAndNotSendSnackbarMessage() throws Exception {
     // given
     Exception exception = new Exception();
     given(errorMessageProvider.getMessage(exception)).willReturn(Maybe.empty());
-    RxErrorHandler handler = new RxErrorHandler(
-        exceptionHandler,
+    UncaughtExceptionHandler handler = new UncaughtExceptionHandler(
+        logger,
         errorMessageProvider,
         snackbarMessageSink
     );
 
     // when
-    handler.accept(exception);
+    handler.uncaughtException(Thread.currentThread(), exception);
 
     // then
-    verify(exceptionHandler).uncaughtException(Thread.currentThread(), exception);
+    verify(logger).log(Level.SEVERE, "Uncaught Exception", exception);
     verify(errorMessageProvider).getMessage(exception);
+    assertThat(snackbarMessageEventCaptor.getAllValues().isEmpty(), is(true));
     verifyNoMoreInteractions(
-        exceptionHandler,
         errorMessageProvider,
         snackbarMessageSink
     );
@@ -92,47 +94,21 @@ public class RxErrorHandlerTest {
     // given
     Exception exception = new Exception();
     given(errorMessageProvider.getMessage(exception)).willReturn(Maybe.just("foo"));
-    RxErrorHandler handler = new RxErrorHandler(
-        exceptionHandler,
+    UncaughtExceptionHandler handler = new UncaughtExceptionHandler(
+        logger,
         errorMessageProvider,
         snackbarMessageSink
     );
 
     // when
-    handler.accept(exception);
+    handler.uncaughtException(Thread.currentThread(), exception);
 
     // then
-    verify(exceptionHandler).uncaughtException(Thread.currentThread(), exception);
+    verify(logger).log(Level.SEVERE, "Uncaught Exception", exception);
     verify(errorMessageProvider).getMessage(exception);
     verify(snackbarMessageSink).publish(snackbarMessageEventCaptor.capture());
     assertThat(snackbarMessageEventCaptor.getValue().getMessage(), is("foo"));
     verifyNoMoreInteractions(
-        exceptionHandler,
-        errorMessageProvider,
-        snackbarMessageSink
-    );
-  }
-
-  @Test
-  public void accept_instanceOfOnErrorNotImplementedException_shouldHandleCause() throws Exception {
-    // given
-    Exception cause = new Exception();
-    OnErrorNotImplementedException exception = new OnErrorNotImplementedException(cause);
-    given(errorMessageProvider.getMessage(cause)).willReturn(Maybe.empty());
-    RxErrorHandler handler = new RxErrorHandler(
-        exceptionHandler,
-        errorMessageProvider,
-        snackbarMessageSink
-    );
-
-    // when
-    handler.accept(exception);
-
-    // then
-    verify(exceptionHandler).uncaughtException(Thread.currentThread(), cause);
-    verify(errorMessageProvider).getMessage(cause);
-    verifyNoMoreInteractions(
-        exceptionHandler,
         errorMessageProvider,
         snackbarMessageSink
     );

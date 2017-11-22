@@ -24,45 +24,45 @@ package com.xemantic.ankh.shared.error;
 
 import com.xemantic.ankh.shared.event.Sink;
 import com.xemantic.ankh.shared.event.SnackbarMessageEvent;
-import io.reactivex.exceptions.OnErrorNotImplementedException;
-import io.reactivex.functions.Consumer;
-import io.reactivex.plugins.RxJavaPlugins;
+import com.xemantic.ankh.shared.snackbar.SnackbarView;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * The default global error handler to be supplied
- * to {@link RxJavaPlugins#setErrorHandler(Consumer)}.
+ * Standardized exception handler. It should be set globally with
+ * {@link Thread#setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler)}.
+ * The handler will log the exception, check if there is a user friendly message
+ * for the exception, and if so it will display it on the {@link SnackbarView}.
+ * The logger can be configured to log thrown exception remotely.
  *
  * @author morisil
  */
 @Singleton
-public class RxErrorHandler implements Consumer<Throwable> {
+public class UncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
-  private final Thread.UncaughtExceptionHandler exceptionHandler;
+  private final Logger logger;
 
   private final ErrorMessageProvider errorMessageProvider;
 
   private final Sink<SnackbarMessageEvent> snackbarMessageSink;
 
   @Inject
-  public RxErrorHandler(
-      Thread.UncaughtExceptionHandler exceptionHandler,
+  public UncaughtExceptionHandler(
+      Logger logger,
       ErrorMessageProvider errorMessageProvider,
       Sink<SnackbarMessageEvent> snackbarMessageSink
   ) {
-    this.exceptionHandler = exceptionHandler;
+    this.logger = logger;
     this.snackbarMessageSink = snackbarMessageSink;
     this.errorMessageProvider = errorMessageProvider;
   }
 
   @Override
-  public void accept(Throwable throwable) throws Exception {
-    if (throwable instanceof OnErrorNotImplementedException) {
-      throwable = throwable.getCause();
-    }
-    exceptionHandler.uncaughtException(Thread.currentThread(), throwable);
+  public void uncaughtException(Thread thread, Throwable throwable) {
+    logger.log(Level.SEVERE, "Uncaught Exception", throwable);
     errorMessageProvider.getMessage(throwable)
         .map(SnackbarMessageEvent::new)
         .subscribe(snackbarMessageSink::publish);
