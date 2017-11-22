@@ -31,7 +31,9 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
-import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Test of the {@link SnackbarPresenter}.
@@ -56,7 +58,7 @@ public class SnackbarPresenterTest {
     presenter.start(view);
 
     // then
-    then(view).shouldHaveZeroInteractions();
+    verifyZeroInteractions(view);
   }
 
   @Test
@@ -71,8 +73,8 @@ public class SnackbarPresenterTest {
     snackbarMessage$.onNext(event);
 
     // then
-    then(view).should().show("foo");
-    then(view).shouldHaveNoMoreInteractions();
+    verify(view).show("foo");
+    verifyNoMoreInteractions(view);
   }
 
 }

@@ -23,6 +23,7 @@
 package com.xemantic.ankh.shared.snackbar;
 
 import com.xemantic.ankh.shared.event.SnackbarMessageEvent;
+import com.xemantic.ankh.shared.presenter.Presenter;
 import io.reactivex.Observable;
 
 import javax.inject.Inject;
@@ -32,7 +33,7 @@ import javax.inject.Inject;
  *
  * @author morisil
  */
-public class SnackbarPresenter {
+public class SnackbarPresenter extends Presenter {
 
   private final Observable<SnackbarMessageEvent> snackbarMessage$;
 
@@ -42,8 +43,9 @@ public class SnackbarPresenter {
   }
 
   public void start(SnackbarView view) {
-    snackbarMessage$.map(SnackbarMessageEvent::getMessage)
-        .subscribe(view::show);
+    on(snackbarMessage$
+        .map(SnackbarMessageEvent::getMessage)
+    ).call(view::show);
   }
 
 }
