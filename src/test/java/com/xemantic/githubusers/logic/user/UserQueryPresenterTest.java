@@ -38,7 +38,8 @@ import java.util.List;
 import static com.xemantic.ankh.shared.event.Trigger.noTriggers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Test of the {@link UserQueryPresenter}.
@@ -54,7 +55,7 @@ public class UserQueryPresenterTest {
   private UserQueryView view;
 
   @Test
-  public void start_view_shouldOnlyBindToView() {
+  public void start_shouldOnlyBindToView() {
     // given
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
     given(view.queryInput$()).willReturn(noTriggers());
@@ -64,8 +65,8 @@ public class UserQueryPresenterTest {
     presenter.start(view);
 
     // then
-    then(view).should().queryInput$();
-    then(view).shouldHaveNoMoreInteractions();
+    verify(view).queryInput$();
+    verifyNoMoreInteractions(view);
     userQuery$.assertNoValues();
   }
 
@@ -85,7 +86,7 @@ public class UserQueryPresenterTest {
     userQuery$.assertValueCount(1);
     assertThat(userQuery$.values())
         .extracting(UserQueryEvent::getQuery)
-        .containsOnly("foo");
+        .containsExactly("foo");
   }
 
   @Test
@@ -106,7 +107,7 @@ public class UserQueryPresenterTest {
     List<UserQueryEvent> events = userQuery$.values();
     assertThat(events)
         .extracting(UserQueryEvent::getQuery)
-        .containsSequence("foo", "bar");
+        .containsExactly("foo", "bar");
   }
 
 }
