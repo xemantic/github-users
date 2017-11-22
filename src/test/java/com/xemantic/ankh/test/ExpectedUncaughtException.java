@@ -23,9 +23,9 @@
 package com.xemantic.ankh.test;
 
 import com.google.common.base.Preconditions;
+import com.xemantic.ankh.shared.error.AnkhExceptionHandler;
 import io.reactivex.functions.Consumer;
 import io.reactivex.plugins.RxJavaPlugins;
-import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -35,11 +35,18 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * JUnit rule checking non-handled exceptions coming from RxJava calls.
+ * JUnit rule checking non-handled exceptions caught by
+ * {@link Thread.UncaughtExceptionHandler}.
+ * <p>
+ * Note: it will also temporally rewire
+ * {@link RxJavaPlugins#setErrorHandler(Consumer)},
+ * otherwise RxJava would print stack traces on {@code System.err}
+ * polluting the output of our test cases.
+ * </p>
  *
  * @author morisil
  */
-public class ExpectedRxJavaError implements TestRule {
+public class ExpectedUncaughtException implements TestRule {
 
   private final AtomicReference<Throwable> throwableRef = new AtomicReference<>();
 
@@ -47,8 +54,8 @@ public class ExpectedRxJavaError implements TestRule {
 
   private String expectedMessage = null;
 
-  public static ExpectedRxJavaError none() {
-    return new ExpectedRxJavaError();
+  public static ExpectedUncaughtException none() {
+    return new ExpectedUncaughtException();
   }
 
   public void expect(Class<? extends Throwable> type) {
@@ -73,15 +80,22 @@ public class ExpectedRxJavaError implements TestRule {
       @Override
       public void evaluate() throws Throwable {
         // we have to cache the current handler first before running the test
-        Consumer<? super Throwable> handler = RxJavaPlugins.getErrorHandler();
+        Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
+            throwableRef.set(throwable)
+        );
+        Consumer<? super Throwable> oldRxJavaHandler = RxJavaPlugins.getErrorHandler();
+        RxJavaPlugins.setErrorHandler(AnkhExceptionHandler::uncaught);
         try {
-          RxJavaPlugins.setErrorHandler(throwableRef::set);
           base.evaluate();
         } finally {
-          // and restore it here
-          RxJavaPlugins.setErrorHandler(handler);
+          // and restore cached handlers here
+          Thread.setDefaultUncaughtExceptionHandler(oldHandler);
+          RxJavaPlugins.setErrorHandler(oldRxJavaHandler);
         }
-        verify(); // if exception happens in evaluate, verify will never be executed
+        verify();
+        // If exception happens in base.evaluate(), then verify() will never be executed.
+        // This is expected as we are awaiting uncaught exception, not caught exception.
       }
     };
   }
@@ -91,28 +105,36 @@ public class ExpectedRxJavaError implements TestRule {
     if (throwable == null) {
       if (expectedType != null) {
         Assert.fail(
-            "No throwable was handled by RxJava error handler, " +
-                "but expected: " + expectedType.getName()
+            "No uncaught exception occurred:\n" +
+                "Expected: <" + expectedType.getName() + ">"
         );
       }
       if (expectedMessage != null) {
         Assert.fail(
-            "No throwable was handled by RxJava error handler, " +
-                "but expected one with message: " + expectedMessage);
+            "No uncaught exception occurred, " +
+                "but expected one with message: \n" +
+                "Expected: \"" + expectedMessage +"\""
+        );
       }
     } else {
       if (expectedType != throwable.getClass()) {
-        Assert.assertThat(
-            "Unexpected exception",
-            throwable.getClass(),
-            CoreMatchers.equalTo(expectedType)
+        throw new AssertionError(
+            "Uncaught exception occurred, but is different than expected:\n" +
+                "Expected: <" + expectedType.getName() +">\n" +
+                "     but: was <" + throwable.getClass().getName() + ">",
+            throwable
         );
       }
-      if (expectedMessage != null) {
-        Assert.assertThat(
-            "Unexpected throwable message",
-            throwable.getMessage(),
-            CoreMatchers.equalTo(expectedMessage)
+      if (
+          (expectedMessage != null)
+              && (!expectedMessage.equals(throwable.getMessage()))
+      ) {
+        throw new AssertionError(
+            "Expected uncaught exception " + expectedType.getName() + " occurred " +
+                "but has unexpected message:\n" +
+                "Expected: \"" + expectedMessage + "\"\n" +
+                "     but: was \"" + throwable.getMessage() + "\"",
+            throwable
         );
       }
     }

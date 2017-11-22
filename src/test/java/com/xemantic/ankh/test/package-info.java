@@ -21,9 +21,8 @@
  */
 
 /**
- * The {@link com.xemantic.ankh.test.ExpectedRxJavaError} and
- * {@link com.xemantic.ankh.test.TestEvents} should be moved to
- * separate module in the ankh project.
+ * The {@link com.xemantic.ankh.test.ExpectedUncaughtException} should be moved
+ * to separate module in the ankh project.
  *
  * @author morisil
  */

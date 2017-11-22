@@ -39,11 +39,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
- * Test of the {@link ExpectedRxJavaError}.
+ * Test of the {@link ExpectedUncaughtException}.
  *
  * @author morisil
  */
-public class ExpectedRxJavaErrorTest {
+public class ExpectedUncaughtExceptionTest {
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
@@ -58,7 +58,7 @@ public class ExpectedRxJavaErrorTest {
   public void evaluate_noExpectedErrorsAndNothingThrown_shouldOnlyEvaluateOriginalStatement() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     Statement statement = expectedError.apply(originalStatement, description);
 
     // when
@@ -73,11 +73,11 @@ public class ExpectedRxJavaErrorTest {
   public void expect_noExceptionThrownButOneExpected_shouldFail() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     Statement statement = expectedError.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("No throwable was handled by RxJava error handler, " +
-        "but expected: java.lang.Exception");
+    thrown.expectMessage("No uncaught exception occurred:\n" +
+        "Expected: <java.lang.Exception>");
 
     // when
     expectedError.expect(Exception.class);
@@ -90,12 +90,12 @@ public class ExpectedRxJavaErrorTest {
   public void expectMessage_noExceptionThrownButMessageExpected_shouldFail() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     Statement statement = expectedError.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
     thrown.expectMessage(
-        "No throwable was handled by RxJava error handler, " +
-            "but expected one with message: foo"
+        "No uncaught exception occurred, but expected one with message: \n" +
+            "Expected: \"foo\""
     );
 
     // when
@@ -109,11 +109,11 @@ public class ExpectedRxJavaErrorTest {
   public void expectExceptionAndMessage_noExceptionThrown_shouldFail() throws Throwable {
     // given
     Statement originalStatement = mock(Statement.class);
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     Statement statement = expectedError.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("No throwable was handled by RxJava error handler, " +
-        "but expected: java.lang.Exception");
+    thrown.expectMessage("No uncaught exception occurred:\n" +
+        "Expected: <java.lang.Exception>");
 
     // when
     expectedError.expect(Exception.class);
@@ -126,7 +126,7 @@ public class ExpectedRxJavaErrorTest {
   @Test
   public void expect_calledTwice_shouldFail() throws Throwable {
     // given
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     expectedError.expect(Exception.class);
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("Already expecting: class java.lang.Exception");
@@ -140,7 +140,7 @@ public class ExpectedRxJavaErrorTest {
   @Test
   public void expect_calledWithNull_shouldFail() throws Throwable {
     // given
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     thrown.expect(NullPointerException.class);
 
     // when
@@ -152,7 +152,7 @@ public class ExpectedRxJavaErrorTest {
   @Test
   public void expectMessage_calledTwice_shouldFail() throws Throwable {
     // given
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     expectedError.expectMessage("foo");
     thrown.expect(IllegalStateException.class);
     thrown.expectMessage("Already expecting message: foo");
@@ -166,7 +166,7 @@ public class ExpectedRxJavaErrorTest {
   @Test
   public void expectMessage_calledWithNull_shouldFail() throws Throwable {
     // given
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     thrown.expect(NullPointerException.class);
 
     // when
@@ -176,7 +176,7 @@ public class ExpectedRxJavaErrorTest {
   }
 
   @Test
-  public void evaluate_exceptionThrownAndExpected_shouldMatchExpectedException() throws Throwable {
+  public void expect_exceptionThrownAndExpected_shouldMatchExpectedException() throws Throwable {
     // given
     Statement originalStatement = new Statement() {
       @Override
@@ -186,7 +186,7 @@ public class ExpectedRxJavaErrorTest {
             .subscribe();
       }
     };
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     expectedError.expect(OnErrorNotImplementedException.class);
     expectedError.expectMessage("foo");
     Statement statement = expectedError.apply(originalStatement, description);
@@ -199,7 +199,7 @@ public class ExpectedRxJavaErrorTest {
   }
 
   @Test
-  public void evaluate_exceptionThrownButExpectingDifferentError_shouldFail() throws Throwable {
+  public void expect_exceptionThrownButExpectingDifferentError_shouldFail() throws Throwable {
     // given
     Statement originalStatement = new Statement() {
       @Override
@@ -209,14 +209,15 @@ public class ExpectedRxJavaErrorTest {
             .subscribe();
       }
     };
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+    ExpectedUncaughtException expectedError = ExpectedUncaughtException.none();
     expectedError.expect(Exception.class);
     expectedError.expectMessage("foo");
     Statement statement = expectedError.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("Unexpected exception\n" +
-        "Expected: <class java.lang.Exception>\n" +
-        "     but: was <class io.reactivex.exceptions.OnErrorNotImplementedException>");
+    thrown.expectMessage("Uncaught exception occurred, " +
+        "but is different than expected:\n" +
+        "Expected: <java.lang.Exception>\n" +
+        "     but: was <io.reactivex.exceptions.OnErrorNotImplementedException>");
 
     // when
     statement.evaluate();
@@ -225,7 +226,7 @@ public class ExpectedRxJavaErrorTest {
   }
 
   @Test
-  public void evaluate_exceptionThrownMatchesExpectedButExpectingDifferentMessage_shouldFail() throws Throwable {
+  public void expect_exceptionThrownMatchesExpectedButExpectingDifferentMessage_shouldFail() throws Throwable {
     // given
     Statement originalStatement = new Statement() {
       @Override
@@ -235,12 +236,14 @@ public class ExpectedRxJavaErrorTest {
             .subscribe();
       }
     };
-    ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
-    expectedError.expect(OnErrorNotImplementedException.class);
-    expectedError.expectMessage("bar");
-    Statement statement = expectedError.apply(originalStatement, description);
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    uncaughtThrown.expect(OnErrorNotImplementedException.class);
+    uncaughtThrown.expectMessage("bar");
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
-    thrown.expectMessage("Unexpected throwable message\n" +
+    thrown.expectMessage("Expected uncaught exception " +
+        "io.reactivex.exceptions.OnErrorNotImplementedException " +
+        "occurred but has unexpected message:\n" +
         "Expected: \"bar\"\n" +
         "     but: was \"foo\"");
 
