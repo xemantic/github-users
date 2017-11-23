@@ -23,7 +23,7 @@
 package com.xemantic.ankh.test;
 
 import com.google.common.base.Preconditions;
-import com.xemantic.ankh.shared.error.AnkhExceptionHandler;
+import com.xemantic.ankh.shared.error.Errors;
 import io.reactivex.functions.Consumer;
 import io.reactivex.plugins.RxJavaPlugins;
 import org.junit.Assert;
@@ -85,7 +85,7 @@ public class ExpectedUncaughtException implements TestRule {
             throwableRef.set(throwable)
         );
         Consumer<? super Throwable> oldRxJavaHandler = RxJavaPlugins.getErrorHandler();
-        RxJavaPlugins.setErrorHandler(AnkhExceptionHandler::uncaught);
+        RxJavaPlugins.setErrorHandler(Errors::onError);
         try {
           base.evaluate();
         } finally {

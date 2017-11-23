@@ -68,10 +68,4 @@ public class AnkhExceptionHandler implements Thread.UncaughtExceptionHandler {
         .subscribe(snackbarMessageSink::publish);
   }
 
-  public static void uncaught(Throwable error) {
-    Thread currentThread = Thread.currentThread();
-    Thread.UncaughtExceptionHandler handler = currentThread.getUncaughtExceptionHandler();
-    handler.uncaughtException(currentThread, error);
-  }
-
 }

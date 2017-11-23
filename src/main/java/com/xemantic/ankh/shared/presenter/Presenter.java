@@ -22,10 +22,9 @@
 
 package com.xemantic.ankh.shared.presenter;
 
-import com.xemantic.ankh.shared.error.AnkhExceptionHandler;
+import com.xemantic.ankh.shared.error.Errors;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.Consumer;
 
 import java.util.LinkedList;
@@ -47,15 +46,14 @@ public abstract class Presenter {
         disposables.add(
             observable
                 .retry(throwable -> { // always retry, will cause unconditional resubscription
-                  Exceptions.throwIfFatal(throwable);
-                  AnkhExceptionHandler.uncaught(throwable);
+                  Errors.onError(throwable);
                   return true;
                 })
                 .subscribe(value -> {
                   try {
                     consumer.accept(value);
                   } catch (Exception e) { // prevent unsubscription but handle exception
-                    AnkhExceptionHandler.uncaught(e);
+                    Errors.onError(e);
                   }
                 })
     );
