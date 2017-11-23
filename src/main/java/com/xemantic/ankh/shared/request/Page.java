@@ -22,12 +22,14 @@
 
 package com.xemantic.ankh.shared.request;
 
-import io.reactivex.*;
-import io.reactivex.exceptions.Exceptions;
-import io.reactivex.functions.*;
+import com.xemantic.ankh.shared.event.Trigger;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.disposables.Disposable;
 
 /**
- * The service response wrapped as a page. It will also include the page number.
+ * The service response wrapped as a page with associated number.
  *
  * @author morisil
  * @param <T> the type of response payload wrapped by this page.
@@ -38,7 +40,7 @@ public class Page<T> {
 
   private final T payload;
 
-  private Page(int number, T payload) {
+  public Page(int number, T payload) {
     this.number = number;
     this.payload = payload;
   }
@@ -51,21 +53,45 @@ public class Page<T> {
     return payload;
   }
 
-  public static <U, T> ObservableTransformer<U, Page<T>> pager(
-      Function<Integer, Single<T>> requester,
-      Consumer<Boolean> onLoading
-  ) {
-    return upstream ->
-        upstream.scanWith(() -> 1, (page, trigger) -> ++page)
-            .doOnNext(page -> onLoading.accept(true))
-            .flatMapSingle(page ->
-                requester.apply(page)
-                    .map(result -> new Page<>(page, result))
-            ).doOnNext(page -> onLoading.accept(false))
-            .doOnError(throwable -> {
-              onLoading.accept(false);
-              throw Exceptions.propagate(throwable);
-            });
+  /**
+   * Will return {@link Observable} of integer numbers representing pages
+   * to request from remote server. The first page is emitted immediately,
+   * the subsequent pages are emitted on {@link Trigger}s from specified
+   * {@link Observable}.
+   *
+   * @param trigger$ the triggers causing emission of subsequent numbers.
+   * @return the sequence of page numbers.
+   */
+  public static Observable<Integer> emitPagesOn(Observable<Trigger> trigger$) {
+    return Observable.create(new ObservableOnSubscribe<Integer>() {
+      private boolean firstTime = true;
+      private int page = 1;
+      @Override
+      public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+        Disposable triggerSubscription = trigger$.subscribe(trigger -> {
+          if (!emitter.isDisposed()) {
+            emitter.onNext(page++);
+          }
+        });
+        emitter.setDisposable(new Disposable() {
+          @Override
+          public void dispose() {
+            page--;
+            triggerSubscription.dispose();
+          }
+          @Override
+          public boolean isDisposed() {
+            return triggerSubscription.isDisposed();
+          }
+        });
+        if (!emitter.isDisposed()) {
+          if (firstTime) {
+            firstTime = false;
+            emitter.onNext(page++);
+          }
+        }
+      }
+    });
   }
 
 }
