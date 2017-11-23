@@ -38,12 +38,12 @@ import java.util.Objects;
  */
 public abstract class Presenter {
 
-  private final List<Disposable> disposables = new LinkedList<>();
+  private final List<Disposable> subscriptions = new LinkedList<>();
 
   protected <T> CallDefiner<T> on(Observable<T> observable) {
     Objects.requireNonNull(observable);
     return consumer ->
-        disposables.add(
+        subscriptions.add(
             observable
                 .retry(throwable -> { // always retry, will cause unconditional resubscription
                   Errors.onError(throwable);
@@ -67,8 +67,8 @@ public abstract class Presenter {
    * {@code Activity} on Android platform.
    */
   public void stop() {
-    disposables.forEach(Disposable::dispose);
-    disposables.clear();
+    subscriptions.forEach(Disposable::dispose);
+    subscriptions.clear();
   }
 
   public interface CallDefiner<T> {
