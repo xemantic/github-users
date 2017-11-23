@@ -22,15 +22,13 @@
 
 package com.xemantic.githubusers.logic.user;
 
-import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.ankh.shared.event.Trigger;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.model.SearchResult;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.service.UserService;
-import com.xemantic.ankh.test.ExpectedRxJavaError;
+import com.xemantic.ankh.test.ExpectedUncaughtException;
 import io.reactivex.Single;
-import io.reactivex.functions.BiPredicate;
 import io.reactivex.subjects.PublishSubject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,12 +40,11 @@ import org.mockito.quality.Strictness;
 
 import javax.inject.Provider;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
-import static com.xemantic.ankh.test.TestEvents.noEvents;
-import static com.xemantic.ankh.test.TestEvents.trigger;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static com.xemantic.ankh.shared.event.Trigger.fire;
+import static com.xemantic.ankh.shared.event.Trigger.noTriggers;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -62,7 +59,7 @@ public class UserListPresenterTest {
   public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
 
   @Rule
-  public ExpectedRxJavaError expectedError = ExpectedRxJavaError.none();
+  public ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
 
   private static final int DEFAULT_PAGE_SIZE = 100; // max for GitHub API
 
@@ -73,9 +70,6 @@ public class UserListPresenterTest {
 
   @Mock
   private UserService userService;
-
-  @Mock
-  private BiPredicate<Integer, Throwable> errorAnalyzer;
 
   @Mock
   private Provider<UserView> userViewProvider;
@@ -90,7 +84,6 @@ public class UserListPresenterTest {
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> mock(UserView.class),
         () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
@@ -101,7 +94,7 @@ public class UserListPresenterTest {
     presenter.start(view);
 
     // then
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
+    verifyNoMoreInteractions(view, userService);
   }
 
   @Test
@@ -111,7 +104,6 @@ public class UserListPresenterTest {
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> mock(UserView.class),
         () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
@@ -124,7 +116,7 @@ public class UserListPresenterTest {
     userQuery$.onNext(event);
 
     // then
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
+    verifyNoMoreInteractions(view, userService);
   }
 
   @Test
@@ -142,12 +134,11 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
     UserPresenter userPresenter = mock(UserPresenter.class);
 
-    given(view.loadMoreIntent$()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noTriggers());
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> userView,
         () -> userPresenter,
         DEFAULT_PAGE_SIZE,
@@ -162,12 +153,14 @@ public class UserListPresenterTest {
     InOrder inOrder = inOrder(view, userService, userPresenter);
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
+    inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
     inOrder.verify(userPresenter).start(user, userView);
     inOrder.verify(view).add(userView);
     // load more stays disabled as it's the last page of results.
-    verifyNoMoreInteractions(view, userService, errorAnalyzer, userPresenter);
+    verifyNoMoreInteractions(view, userService, userPresenter);
   }
 
   @Test
@@ -186,12 +179,11 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
     UserPresenter userPresenter = mock(UserPresenter.class);
 
-    given(view.loadMoreIntent$()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noTriggers());
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> userView,
         () -> userPresenter,
         pageSize,
@@ -206,16 +198,18 @@ public class UserListPresenterTest {
     InOrder inOrder = inOrder(view, userService, userPresenter);
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, pageSize);
+    inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
     inOrder.verify(userPresenter).start(user, userView);
     inOrder.verify(view).add(userView);
     inOrder.verify(view).enableLoadMore(true);
-    verifyNoMoreInteractions(view, userService, errorAnalyzer, userPresenter);
+    verifyNoMoreInteractions(view, userService, userPresenter);
   }
 
   @Test
-  public void onLoadMore_when1pageIsAlreadyDisplayedAnd2UsersInTotal_shouldRequestAndDisplayNextPageAndDisableLoadMore() {
+  public void onLoadMore_when1pageIsAlreadyDisplayedAnd2UsersInTotal_shouldRequestAndDisplayNextPageAndDisableLoadMore() throws InterruptedException {
     // given
     int pageSize = 1;
     int totalCount = 2;
@@ -248,7 +242,6 @@ public class UserListPresenterTest {
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         userViewProvider,
         userPresenterProvider,
         pageSize,
@@ -258,20 +251,20 @@ public class UserListPresenterTest {
     userQuery$.onNext(new UserQueryEvent("foo"));
 
     // when
-    trigger(loadMoreIntent);
+    fire(loadMoreIntent);
 
     // then
     InOrder inOrder = inOrder(
         view,
         userService,
-        userViewProvider,
-        userPresenterProvider,
         userPresenter1,
         userPresenter2
     );
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, 1);
+    inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
     inOrder.verify(userPresenter1).start(user1, userView1);
     inOrder.verify(view).add(userView1);
@@ -283,11 +276,9 @@ public class UserListPresenterTest {
     verifyNoMoreInteractions(
         view,
         userService,
-        errorAnalyzer,
-        userViewProvider,
-        userPresenterProvider,
         userPresenter1,
-        userPresenter2);
+        userPresenter2
+    );
   }
 
   @Test
@@ -295,7 +286,6 @@ public class UserListPresenterTest {
     // given
     int totalCount = 1001;  // higher than max limit of 1000
     PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
-    PublishSubject<UserSelectedEvent> userSelectedBus = PublishSubject.create();
 
     User user = mock(User.class);
     SearchResult result = mock(SearchResult.class);
@@ -311,7 +301,6 @@ public class UserListPresenterTest {
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> userView,
         () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
@@ -321,22 +310,23 @@ public class UserListPresenterTest {
 
     // when
     userQuery$.onNext(new UserQueryEvent("foo"));
-    for (int i = 2; i <= 10; i++) { // starting with 2 as the page 1 is loaded immediately after query event
-      trigger(loadMoreIntent);
-    }
+    IntStream.rangeClosed(2, 10).forEach(i -> fire(loadMoreIntent));
 
     // then
+    verify(view).loadingFirstPage(true);
+    verify(view).loadingFirstPage(false);
     verify(view).loadMoreIntent$();
     verify(view).clear();
     verify(userService, times(10)).find(eq("foo"), anyInt(), eq(DEFAULT_PAGE_SIZE));
     verify(view, times(1000)).add(userView);
     verify(view, times(10)).enableLoadMore(false);
     verify(view, times(9)).enableLoadMore(true);
+
     /*
      * it would be better to actually check the latest operation if it leaves loadMore disabled,
      * but there are no good mockito matchers, maybe should be reworked to use ArgumentCaptor instead
      */
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
+    verifyNoMoreInteractions(view, userService);
   }
 
   @Test
@@ -358,14 +348,13 @@ public class UserListPresenterTest {
         .willReturn(response1$.singleOrError())
         .willReturn(response2$.singleOrError());
 
-    given(view.loadMoreIntent$()).willReturn(noEvents());
+    given(view.loadMoreIntent$()).willReturn(noTriggers());
 
     UserView userView = mock(UserView.class);
 
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> userView,
         () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
@@ -373,114 +362,59 @@ public class UserListPresenterTest {
     );
 
     // intermediate state check
-    assertThat(userQuery$.hasObservers(), is(false));
-    assertThat(response1$.hasObservers(), is(false));
-    assertThat(response2$.hasObservers(), is(false));
+    assertThat(userQuery$.hasObservers()).isFalse();
+    assertThat(response1$.hasObservers()).isFalse();
+    assertThat(response2$.hasObservers()).isFalse();
 
     presenter.start(view);
 
     // intermediate state check
-    assertThat(userQuery$.hasObservers(), is(true));
-    assertThat(response1$.hasObservers(), is(false));
-    assertThat(response2$.hasObservers(), is(false));
+    assertThat(userQuery$.hasObservers()).isTrue();
+    assertThat(response1$.hasObservers()).isFalse();
+    assertThat(response2$.hasObservers()).isFalse();
 
     userQuery$.onNext(event1);
 
     // intermediate state check
-    assertThat(userQuery$.hasObservers(), is(true));
-    assertThat(response1$.hasObservers(), is(true));
-    assertThat(response2$.hasObservers(), is(false));
+    assertThat(userQuery$.hasObservers()).isTrue();
+    assertThat(response1$.hasObservers()).isTrue();
+    assertThat(response2$.hasObservers()).isFalse();
 
     // when
     userQuery$.onNext(event2); // ping
     response2$.onNext(result); // pong
 
     // intermediate state check
-    assertThat(userQuery$.hasObservers(), is(true));
-    assertThat(response1$.hasObservers(), is(false));
-    assertThat(response2$.hasObservers(), is(true));
+    assertThat(userQuery$.hasObservers()).isTrue();
+    assertThat(response1$.hasObservers()).isFalse();
+    assertThat(response2$.hasObservers()).isTrue();
 
     response2$.onComplete();
 
     // then
-    assertThat(userQuery$.hasObservers(), is(true));
+    assertThat(userQuery$.hasObservers()).isTrue();
     // request1 is eventually unsubscribed, which implies pending request is cancelled
-    assertThat(response1$.hasObservers(), is(false));
-    assertThat(response2$.hasObservers(), is(false));
+    assertThat(response1$.hasObservers()).isFalse();
+    assertThat(response2$.hasObservers()).isFalse();
 
     InOrder inOrder = inOrder(view, userService);
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("bar", 1, DEFAULT_PAGE_SIZE);
+    inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
     inOrder.verify(view).add(userView);
-
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
+    verifyNoMoreInteractions(view, userService);
   }
 
-  // TODO in the future this test case should be handled by service access layer itself (exponential backoff)
+  // use case - for example 500 internal server error happens remotely
   @Test
-  public void onErrorInRequest_errorIsRecoverable_shouldRetryRequest() throws Exception {
-    // given
-    @SuppressWarnings("ThrowableNotThrown")
-    RuntimeException error = new RuntimeException();
-    int totalCount = 1;
-    int pageSize = 1;
-    PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
-
-    User user = mock(User.class);
-    SearchResult result = mock(SearchResult.class);
-    given(result.getTotalCount()).willReturn(totalCount);
-    given(result.getItems()).willReturn(Collections.singletonList(user));
-
-    AtomicInteger requestCounter = new AtomicInteger(0);
-    given(userService.find(anyString(), anyInt(), anyInt()))
-        .willReturn(
-            Single.just(result)
-              .doOnEvent((searchResult, throwable) -> {
-                  if (requestCounter.incrementAndGet() == 1) { // first attempt
-                    throw error;
-                  }
-              })
-        );
-
-    given(errorAnalyzer.test(any(Integer.class), any(Throwable.class))).willReturn(true);
-
-    given(view.loadMoreIntent$()).willReturn(noEvents());
-
-    UserView userView = mock(UserView.class);
-
-    UserListPresenter presenter = new UserListPresenter(
-        userQuery$,
-        userService,
-        errorAnalyzer,
-        () -> userView,
-        () -> mock(UserPresenter.class),
-        pageSize,
-        DEFAULT_USER_SEARCH_LIMIT
-    );
-    presenter.start(view);
-
-    // when
-    userQuery$.onNext(new UserQueryEvent("foo")); // will generate error in request
-
-    // then
-    InOrder inOrder = inOrder(view, userService, errorAnalyzer);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(userService).find("foo", 1, pageSize);
-    inOrder.verify(errorAnalyzer).test(1, error); // 1 - first attempt, will retry
-    inOrder.verify(view).clear();
-    inOrder.verify(view).add(userView);
-    // no load more
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
-  }
-
-  @Test
-  public void onErrorInRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() throws Exception {
+  public void onErrorIn1StRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() throws Exception {
     // given
     @SuppressWarnings("ThrowableNotThrown")
     RuntimeException error = new RuntimeException("bar");
@@ -497,8 +431,6 @@ public class UserListPresenterTest {
         .willReturn(Single.error(error))
         .willReturn(Single.just(result));
 
-    given(errorAnalyzer.test(any(Integer.class), any(Throwable.class))).willReturn(false);
-
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
     given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
@@ -507,7 +439,6 @@ public class UserListPresenterTest {
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> userView,
         () -> mock(UserPresenter.class),
         pageSize,
@@ -517,23 +448,95 @@ public class UserListPresenterTest {
     userQuery$.onNext(new UserQueryEvent("foo")); // will generate error in request
 
     // when
-    trigger(loadMoreIntent);
+    fire(loadMoreIntent);
 
     // then
-    InOrder inOrder = inOrder(view, userService, errorAnalyzer);
+    InOrder inOrder = inOrder(view, userService);
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, pageSize);
     inOrder.verify(view).enableLoadMore(true);
+    inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, pageSize);
+    inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
     inOrder.verify(view).add(userView);
-    // no load more
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
+    verifyNoMoreInteractions(view, userService);
 
-    expectedError.expect(RuntimeException.class);
-    expectedError.expectMessage("bar");
+    uncaughtThrown.expect(RuntimeException.class);
+    uncaughtThrown.expectMessage("bar");
+  }
+
+  // use case - for example 403 - GitHub req/minute limit reached reached
+  @Test
+  public void onErrorIn3RdRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() throws Exception {
+    // given
+    @SuppressWarnings("ThrowableNotThrown")
+    RuntimeException error = new RuntimeException("API rate limit exceeded");
+    int totalCount = 3; // we want to keep "load more" enabled at the end
+    int pageSize = 1;
+    PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
+
+    User user1 = mock(User.class);
+    SearchResult result1 = mock(SearchResult.class);
+    given(result1.getTotalCount()).willReturn(totalCount);
+    given(result1.getItems()).willReturn(Collections.singletonList(user1));
+
+    User user2 = mock(User.class);
+    SearchResult result2 = mock(SearchResult.class);
+    given(result2.getTotalCount()).willReturn(totalCount);
+    given(result2.getItems()).willReturn(Collections.singletonList(user2));
+
+    given(userService.find(anyString(), anyInt(), anyInt()))
+        .willReturn(Single.just(result1))
+        .willReturn(Single.error(error))
+        .willReturn(Single.just(result2));
+
+    PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
+    given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
+
+    UserView userView = mock(UserView.class);
+
+    UserListPresenter presenter = new UserListPresenter(
+        userQuery$,
+        userService,
+        () -> userView,
+        () -> mock(UserPresenter.class),
+        pageSize,
+        DEFAULT_USER_SEARCH_LIMIT
+    );
+    presenter.start(view);
+    userQuery$.onNext(new UserQueryEvent("foo")); // will generate error in request
+    fire(loadMoreIntent);
+
+    // when
+    fire(loadMoreIntent);
+
+    // then
+    InOrder inOrder = inOrder(view, userService);
+    inOrder.verify(view).loadMoreIntent$();
+    inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
+    inOrder.verify(userService).find("foo", 1, pageSize);
+    inOrder.verify(view).loadingFirstPage(false);
+    inOrder.verify(view).clear();
+    inOrder.verify(view).add(userView);
+    inOrder.verify(view).enableLoadMore(true);
+    inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(userService).find("foo", 2, pageSize);
+    inOrder.verify(view).enableLoadMore(true);
+    inOrder.verify(view).loadingFirstPage(false);
+    inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(userService).find("foo", 2, pageSize);
+    inOrder.verify(view).add(userView);
+    inOrder.verify(view).enableLoadMore(true); // still 3rd page to be shown
+    verifyNoMoreInteractions(view, userService);
+
+    uncaughtThrown.expect(RuntimeException.class);
+    uncaughtThrown.expectMessage("API rate limit exceeded");
   }
 
   @Test
@@ -551,7 +554,6 @@ public class UserListPresenterTest {
     UserListPresenter presenter = new UserListPresenter(
         userQuery$,
         userService,
-        errorAnalyzer,
         () -> mock(UserView.class),
         () -> mock(UserPresenter.class),
         DEFAULT_PAGE_SIZE,
@@ -561,8 +563,9 @@ public class UserListPresenterTest {
     userQuery$.onNext(event);
 
     // intermediate check
-    assertThat(request$.hasObservers(), is(true));
-    assertThat(loadMoreIntent.hasObservers(), is(true));
+    assertThat(userQuery$.hasObservers()).isTrue();
+    assertThat(request$.hasObservers()).isTrue();
+    assertThat(loadMoreIntent.hasObservers()).isTrue();
 
     // when
     presenter.stop();
@@ -571,12 +574,75 @@ public class UserListPresenterTest {
     InOrder inOrder = inOrder(view, userService);
     inOrder.verify(view).loadMoreIntent$();
     inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
-    verifyNoMoreInteractions(view, userService, errorAnalyzer);
+    verifyNoMoreInteractions(view, userService);
 
-    assertThat(userQuery$.hasObservers(), is(false));
-    assertThat(request$.hasObservers(), is(false));
-    assertThat(loadMoreIntent.hasObservers(), is(false));
+    assertThat(userQuery$.hasObservers()).isFalse();
+    assertThat(request$.hasObservers()).isFalse();
+    assertThat(loadMoreIntent.hasObservers()).isFalse();
+  }
+
+  @Test
+  public void stop_afterDisplaying1StPage_shouldUnsubscribeFromEventBusCancelRequestStopAllChilderenPresentersAndUnbindView() {
+    // given
+    int totalCount = 1;
+    int pageSize = 1;
+
+    UserQueryEvent event = new UserQueryEvent("foo");
+    PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
+    PublishSubject<SearchResult> request$ = PublishSubject.create();
+
+    User user = mock(User.class);
+    SearchResult result = mock(SearchResult.class);
+    given(result.getTotalCount()).willReturn(totalCount);
+    given(result.getItems()).willReturn(Collections.singletonList(user));
+
+    given(userService.find("foo", 1, pageSize)).willReturn(Single.just(result));
+
+    PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
+    given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
+
+    UserPresenter userPresenter = mock(UserPresenter.class);
+    given(userPresenterProvider.get()).willReturn(userPresenter);
+
+    UserView userView = mock(UserView.class);
+
+    UserListPresenter presenter = new UserListPresenter(
+        userQuery$,
+        userService,
+        () -> userView,
+        userPresenterProvider,
+        pageSize,
+        DEFAULT_USER_SEARCH_LIMIT
+    );
+    presenter.start(view);
+    userQuery$.onNext(event);
+
+    // intermediate check
+    assertThat(userQuery$.hasObservers()).isTrue();
+    assertThat(loadMoreIntent.hasObservers()).isTrue();
+    assertThat(request$.hasObservers()).isFalse(); // already finished
+
+    // when
+    presenter.stop();
+
+    // then
+    InOrder inOrder = inOrder(view, userService, userPresenter);
+    inOrder.verify(view).loadMoreIntent$();
+    inOrder.verify(view).enableLoadMore(false);
+    inOrder.verify(view).loadingFirstPage(true);
+    inOrder.verify(userService).find("foo", 1, pageSize);
+    inOrder.verify(view).loadingFirstPage(false);
+    inOrder.verify(view).clear();
+    inOrder.verify(userPresenter).start(user, userView);
+    inOrder.verify(view).add(userView);
+    inOrder.verify(userPresenter).stop(); // essence of this test - child presenter is stopped as well
+    verifyNoMoreInteractions(view, userService, userPresenter);
+
+    assertThat(userQuery$.hasObservers()).isFalse();
+    assertThat(loadMoreIntent.hasObservers()).isFalse();
+    assertThat(request$.hasObservers()).isFalse();
   }
 
 }

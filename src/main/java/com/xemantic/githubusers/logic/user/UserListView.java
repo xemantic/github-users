@@ -40,4 +40,6 @@ public interface UserListView {
 
   void enableLoadMore(boolean enabled);
 
+  void loadingFirstPage(boolean loading);
+
 }

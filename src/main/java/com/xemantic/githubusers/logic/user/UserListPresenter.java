@@ -22,21 +22,19 @@
 
 package com.xemantic.githubusers.logic.user;
 
-import com.xemantic.ankh.shared.event.Trigger;
+import com.xemantic.ankh.shared.error.Errors;
+import com.xemantic.ankh.shared.presenter.Presenter;
+import com.xemantic.ankh.shared.request.Page;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.model.SearchResult;
 import com.xemantic.githubusers.logic.model.User;
 import com.xemantic.githubusers.logic.service.UserService;
 import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.BiPredicate;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.subjects.PublishSubject;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -44,42 +42,28 @@ import java.util.List;
  *
  * @author morisil
  */
-public class UserListPresenter {
+public class UserListPresenter extends Presenter {
 
   private final Observable<UserQueryEvent> userQuery$;
 
   private final UserService userService;
 
-  private final BiPredicate<Integer, Throwable> errorAnalyzer;
-
   private final Provider<UserView> userViewProvider;
 
   private final Provider<UserPresenter> userPresenterProvider;
+
+  private final List<UserPresenter> displayedUserPresenters = new LinkedList<>();
 
   private final int userListPageSize;
 
   private final int gitHubUserSearchLimit;
 
-  /*
-   * we don't care about synchronization of currentPage and query
-   * because these fields are supposed to be always mutated from the
-   * rendering thread of each platform (UI rendering is single-threaded everywhere)
-   */
-  private int page;
-
-  private String query;
-
   private UserListView view;
-
-  private Disposable userQuerySubscription;
-
-  private Disposable requestSubscription;
 
   @Inject
   public UserListPresenter(
       Observable<UserQueryEvent> userQuery$,
       UserService userService,
-      BiPredicate<Integer, Throwable> errorAnalyzer,
       Provider<UserView> userViewProvider,
       Provider<UserPresenter> userPresenterProvider,
       @Named("userListPageSize") int userListPageSize,
@@ -88,7 +72,6 @@ public class UserListPresenter {
   ) {
     this.userQuery$ = userQuery$;
     this.userService = userService;
-    this.errorAnalyzer = errorAnalyzer;
     this.userViewProvider = userViewProvider;
     this.userPresenterProvider = userPresenterProvider;
     this.userListPageSize = userListPageSize;
@@ -102,97 +85,76 @@ public class UserListPresenter {
    */
   public void start(UserListView view) {
     this.view = view;
-    userQuerySubscription = userQuery$
-        .filter(event -> ! event.getQuery().trim().isEmpty()) // kick out empty queries
-        .subscribe(event -> handleNewQuery(event.getQuery()));
+    on(userQuery$
+        .filter(event -> ! event.getQuery().trim().isEmpty())  // kick out empty queries
+        .map(UserQueryEvent::getQuery)
+        .switchMap(this::loadUsers)// will dispose stale subscriptions from previous requests
+    ).call(this::handlePage);
   }
 
-  /**
-   * Stops this presenter. This method is supposed to be called
-   * when it is required to cancel all the pending HTTP requests, and
-   * unsubscribe from any {@link Observable}. for example when user is navigating
-   * to another {@code Activity} on Android platform.
-   */
+  @Override
   public void stop() {
-    requestSubscription.dispose();
-    userQuerySubscription.dispose();
+    super.stop();
+    clearDisplayedUserPresenters();
   }
 
-  private void handleNewQuery(String query) {
-
-    prepareNewRequestStream(query);
-
-    PublishSubject<Trigger> firstTrigger = PublishSubject.create();
-
-    requestSubscription = view.loadMoreIntent$()
-        .mergeWith(firstTrigger)
-        .doOnNext(e -> view.enableLoadMore(false))
-        .flatMapSingle(e -> requestPage())
-        .doOnError(e -> view.enableLoadMore(true))
-        .retry(throwable -> { // TODO move this code to abstract base Presenter
-          RxJavaPlugins.getErrorHandler().accept(throwable);
-          return true; // always retry
+  private Observable<Page<SearchResult>> loadUsers(String query) {
+    return Page.emitPagesOn(view.loadMoreIntent$())
+        .doOnNext(page -> {
+          view.enableLoadMore(false);
+          if (page == 1) { view.loadingFirstPage(true); }
         })
-        .subscribe(this::handleResult);
-
-    firstTrigger.onNext(Trigger.INSTANCE);
-    /*
-      This needs some explanation, in the original code the whole request
-      observable was started with Observable.just(Trigger.INSTANCE),
-      to push initial trigger, and then it was merged with the view.loadMoreIntent$().
-      But it didn't work as expected with the .retry() logic which is
-      resubscribing to the whole already defined observable therefore it was also
-      emitting the first trigger. For this reason I used PublishSubject to make the
-      initial trigger conditional and use it only when new query arrives.
-     */
+        .flatMapSingle(page ->
+            userService.find(query, page, userListPageSize)
+                .map(result -> new Page<>(page, result))
+        )
+        .retry(throwable -> {
+          cleanViewOnError();
+          Errors.onError(throwable);
+          return true;
+        });
   }
 
-  private void prepareNewRequestStream(String query) {
-    this.query = query;
-    if (requestSubscription != null) {
-      requestSubscription.dispose();
-    }
-    page = 1;
+  private void cleanViewOnError() {
+    view.enableLoadMore(true);
+    view.loadingFirstPage(false);
   }
 
-  private Single<SearchResult> requestPage() {
-    return userService.find(query, page, userListPageSize)
-        .retry(errorAnalyzer); // TODO errorAnalyzer should log error as well, inform about next attempt, but never send it to Snackbar
-    // TODO also exponential backoff should be implemented here, maybe on the service level
-  }
-
-  private void handleResult(SearchResult result) {
-    if (page == 1) {
+  private void handlePage(Page<SearchResult> page) {
+    if (page.getNumber() == 1) {
+      view.loadingFirstPage(false);
       view.clear();
+      clearDisplayedUserPresenters();
     }
-    addUsers(result.getItems());
-    if (shouldEnableLoadMore(result)) {
+    page.getPayload()
+        .getItems()
+        .forEach(user -> view.add(newUserView(user)));
+    if (!isLast(page)) {
       view.enableLoadMore(true);
     }
-    page++;
   }
 
-  private boolean shouldEnableLoadMore(SearchResult result) {
+  private void clearDisplayedUserPresenters() {
+    displayedUserPresenters.forEach(Presenter::stop);
+    displayedUserPresenters.clear();
+  }
+
+  private boolean isLast(Page<SearchResult> page) {
     int currentCount = (
-        ((page - 1) * userListPageSize)
-            + result.getItems().size()
+        ((page.getNumber() - 1) * userListPageSize)
+            + page.getPayload().getItems().size()
     );
     return (
-        (currentCount < result.getTotalCount()) // there is more
-            && (currentCount < gitHubUserSearchLimit)
+        (currentCount >= page.getPayload().getTotalCount()) // there is more
+            || (currentCount >= gitHubUserSearchLimit)
     );
-  }
-
-  private void addUsers(List<User> users) {
-    for (User user : users) {
-      view.add(newUserView(user));
-    }
   }
 
   private UserView newUserView(User user) {
     UserView view = userViewProvider.get();
     UserPresenter presenter = userPresenterProvider.get();
     presenter.start(user, view);
+    displayedUserPresenters.add(presenter);
     return view;
   }
 
