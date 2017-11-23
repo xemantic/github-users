@@ -244,6 +244,9 @@ coming with full test coverage and test cases can be transpiled as well to be ru
 the target platform. See example
 [UserPresenterTest](src/test/java/com/xemantic/githubusers/presenter/UserPresenterTest.java).
 
+Note: don not use `inOrder.verifyNoMoreInteractions()`, for some reason
+much more meaningful message comes from `verify(all, the, mocks, again)`
+
 # User Experience design
 
 The [Material Design](https://material.io/guidelines/) will be used on all the platforms
