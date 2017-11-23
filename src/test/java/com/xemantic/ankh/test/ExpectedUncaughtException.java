@@ -92,10 +92,14 @@ public class ExpectedUncaughtException implements TestRule {
           // and restore cached handlers here
           Thread.setDefaultUncaughtExceptionHandler(oldHandler);
           RxJavaPlugins.setErrorHandler(oldRxJavaHandler);
+          verify();
+          // Some other exception might have happened on base.evaluate(), but if it is so,
+          // it might be a side consequence of uncaught exception discovered by this
+          // rule. For this reason we are are verifying in finally, if this rule will
+          // report failure, then an exception thrown in base.evaluate() will be suppressed.
+          // It will be reported eventually once the original problem with expected or
+          // unexpected uncaught exception is resolved.
         }
-        verify();
-        // If exception happens in base.evaluate(), then verify() will never be executed.
-        // This is expected as we are awaiting uncaught exception, not caught exception.
       }
     };
   }
@@ -103,40 +107,46 @@ public class ExpectedUncaughtException implements TestRule {
   private void verify() {
     Throwable throwable = throwableRef.get();
     if (throwable == null) {
-      if (expectedType != null) {
-        Assert.fail(
-            "No uncaught exception occurred:\n" +
-                "Expected: <" + expectedType.getName() + ">"
-        );
-      }
-      if (expectedMessage != null) {
-        Assert.fail(
-            "No uncaught exception occurred, " +
-                "but expected one with message: \n" +
-                "Expected: \"" + expectedMessage +"\""
-        );
-      }
+      verifyUncaughtErrorNotExpected();
     } else {
-      if (expectedType != throwable.getClass()) {
-        throw new AssertionError(
-            "Uncaught exception occurred, but is different than expected:\n" +
-                "Expected: <" + expectedType.getName() +">\n" +
-                "     but: was <" + throwable.getClass().getName() + ">",
-            throwable
-        );
-      }
-      if (
-          (expectedMessage != null)
-              && (!expectedMessage.equals(throwable.getMessage()))
-      ) {
-        throw new AssertionError(
-            "Expected uncaught exception " + expectedType.getName() + " occurred " +
-                "but has unexpected message:\n" +
-                "Expected: \"" + expectedMessage + "\"\n" +
-                "     but: was \"" + throwable.getMessage() + "\"",
-            throwable
-        );
-      }
+      verifyUncaughtErrorMatchesExpectations(throwable);
+    }
+  }
+
+  private void verifyUncaughtErrorNotExpected() {
+    if (expectedType != null) {
+      Assert.fail(
+          "No uncaught exception occurred:\n" +
+              "Expected: <" + expectedType.getName() + ">"
+      );
+    }
+    if (expectedMessage != null) {
+      Assert.fail(
+          "No uncaught exception occurred, " +
+              "but expected one with message: \n" +
+              "Expected: \"" + expectedMessage +"\""
+      );
+    }
+  }
+
+  private void verifyUncaughtErrorMatchesExpectations(Throwable throwable) {
+    if ((expectedType == null) && (expectedMessage == null)) {
+      throw new AssertionError("Unexpected uncaught exception", throwable);
+    } else if ((expectedType != null) && (expectedType != throwable.getClass())) {
+      throw new AssertionError(
+          "Uncaught exception occurred, but is different than expected:\n" +
+              "Expected: <" + expectedType.getName() +">\n" +
+              "     but: was <" + throwable.getClass().getName() + ">",
+          throwable
+      );
+    } else if ((expectedMessage != null) && (!expectedMessage.equals(throwable.getMessage()))) {
+      throw new AssertionError(
+          "Expected uncaught exception " + expectedType.getName() + " occurred " +
+              "but has unexpected message:\n" +
+              "Expected: \"" + expectedMessage + "\"\n" +
+              "     but: was \"" + throwable.getMessage() + "\"",
+          throwable
+      );
     }
   }
 

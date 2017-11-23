@@ -253,4 +253,49 @@ public class ExpectedUncaughtExceptionTest {
     // then should fail
   }
 
+  @Test
+  public void noneExpected_butUncaughtErrorOccurred_shouldFail() throws Throwable {
+    // given
+    Statement originalStatement = new Statement() {
+      @Override
+      public void evaluate() throws Throwable {
+        Single.just("bar")
+            .map(s -> { throw new Exception("foo"); })
+            .subscribe();
+      }
+    };
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
+    thrown.expect(AssertionError.class);
+    thrown.expectMessage("Unexpected uncaught exception");
+
+    // when
+    statement.evaluate();
+
+    // then should fail
+  }
+
+  @Test
+  public void noneExpected_butUncaughtErrorOccurredAndStatementThrowsException_shouldFail() throws Throwable {
+    // given
+    Statement originalStatement = new Statement() {
+      @Override
+      public void evaluate() throws Throwable {
+        Single.just("bar")
+            .map(s -> { throw new Exception("foo"); })
+            .subscribe();
+        throw new Exception("buzz");
+      }
+    };
+    ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
+    Statement statement = uncaughtThrown.apply(originalStatement, description);
+    thrown.expect(AssertionError.class);
+    thrown.expectMessage("Unexpected uncaught exception");
+
+    // when
+    statement.evaluate();
+
+    // then should fail
+  }
+
 }
