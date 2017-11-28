@@ -84,7 +84,7 @@ public class UserListPresenter extends Presenter {
                 handlePage(pager.get(), result);
                 pager.incrementAndGet();
               })
-              .retry(throwable -> { // retry here because of the switchMap, we want to stay on the page
+              .retry(throwable -> { // retry here because of the switchMap, we want to stay on the same page
                 cleanViewOnError();
                 Errors.onError(throwable);
                 return true;
@@ -136,7 +136,7 @@ public class UserListPresenter extends Presenter {
             + result.getItems().size()
     );
     return (
-        (currentCount >= result.getTotalCount()) // there is more
+        (currentCount >= result.getTotalCount())
             || (currentCount >= gitHubUserSearchLimit)
     );
   }
