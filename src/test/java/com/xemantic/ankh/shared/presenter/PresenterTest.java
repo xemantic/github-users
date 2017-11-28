@@ -28,16 +28,12 @@ import io.reactivex.subjects.PublishSubject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -57,122 +53,172 @@ public class PresenterTest {
   public ExpectedUncaughtException uncaughtThrown = ExpectedUncaughtException.none();
 
   @Mock
-  private Consumer<String> subscriber;
+  private Consumer<String> consumer;
 
   @Test
-  public void on_observable_shouldReturnCallDefiner() {
+  public void lifecycle_noEventRegistrations_shouldCreateInstanceSupportingLifecycle() {
     // given
-    PublishSubject<String> subject = PublishSubject.create();
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        super();
+      }
+    }
     TestPresenter presenter = new TestPresenter();
 
     // when
-    Presenter.CallDefiner<String> definer = presenter.on(subject);
+    presenter.start();
+    presenter.stop();
 
-    // then
-    assertThat(definer).isNotNull();
+    // then no exceptions should happen
   }
 
-  @Test
-  public void on_null_shouldFail() {
-    // given
-    TestPresenter presenter = new TestPresenter();
-    thrown.expect(NullPointerException.class);
-
-    // when
-    presenter.on(null);
-
-    // then exception should be thrown
-  }
 
   @Test
-  public void onCall_observablePublishesEvent_shouldExecuteSubscriberCall() throws Exception {
+  public void eventPublished_beforeStart_shouldIgnoreEvent() {
     // given
     PublishSubject<String> subject = PublishSubject.create();
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        super(subject.doOnNext(consumer));
+      }
+    }
     TestPresenter presenter = new TestPresenter();
-    presenter.on(subject).call(subscriber);
 
     // when
     subject.onNext("foo");
 
     // then
-    verify(subscriber).accept("foo");
-    verifyNoMoreInteractions(subscriber);
+    verifyZeroInteractions(consumer);
   }
 
   @Test
-  public void onEvent_presenterStopped_shouldIgnoreSubsequentEvent() {
+  public void eventPublished_afterStart_shouldReceiveEvent() throws Exception {
     // given
     PublishSubject<String> subject = PublishSubject.create();
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        super(subject.doOnNext(consumer));
+      }
+    }
     TestPresenter presenter = new TestPresenter();
-    presenter.on(subject).call(subscriber);
+    presenter.start();
+
+    // when
+    subject.onNext("foo");
+
+    // then
+    verify(consumer).accept("foo");
+    verifyNoMoreInteractions(consumer);
+  }
+
+  @Test
+  public void eventPublished_afterStop_shouldIgnoreEvent() throws Exception {
+    // given
+    PublishSubject<String> subject = PublishSubject.create();
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        super(subject.doOnNext(consumer));
+      }
+    }
+    TestPresenter presenter = new TestPresenter();
+    presenter.start();
     presenter.stop();
 
     // when
     subject.onNext("foo");
 
     // then
-    verifyZeroInteractions(subscriber);
+    verifyZeroInteractions(consumer);
   }
 
   @Test
-  public void onEvent_errorInSubscription_shouldStaySubscribedAndHandleNextEvents() throws Exception {
+  public void start_actionToHappenOnStart_shouldExecuteAction() throws Exception {
     // given
-    List<String> received = new LinkedList<>();
-    AtomicInteger counter = new AtomicInteger(0);
-    PublishSubject<String> subject = PublishSubject.create();
-    TestPresenter presenter = new TestPresenter();
-    doAnswer(invocation -> {
-      if (counter.incrementAndGet() == 1) {
-        throw new RuntimeException("buzz");
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        onStart(() -> consumer.accept("foo"));
       }
-      received.add(invocation.getArgument(0));
-      return null;
-    }).when(subscriber).accept(anyString());
-    presenter.on(subject).call(subscriber);
+    }
+    TestPresenter presenter = new TestPresenter();
 
     // when
-    subject.onNext("foo"); // throws exception
-    subject.onNext("bar");
+    presenter.start();
 
     // then
-    verify(subscriber).accept("foo");
-    verify(subscriber).accept("bar");
-    verifyNoMoreInteractions(subscriber);
-    assertThat(received).containsExactly("bar");
-    uncaughtThrown.expect(RuntimeException.class);
-    uncaughtThrown.expectMessage("buzz");
+    verify(consumer).accept("foo");
+    verifyNoMoreInteractions(consumer);
   }
 
   @Test
-  public void onEvent_errorInSubscribedObservable_shouldStaySubscribedAndHandleNextEvents() throws Exception {
+  public void eventPublished_multipleRegistrations_shouldSubscribeAll() throws Exception {
     // given
-    List<String> received = new LinkedList<>();
-    AtomicInteger counter = new AtomicInteger(0);
     PublishSubject<String> subject = PublishSubject.create();
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        super(
+            subject.map(value -> value + "1").doOnNext(consumer),
+            subject.map(value -> value + "2").doOnNext(consumer)
+        );
+        onStart(() -> consumer.accept("bar3"));
+      }
+    }
     TestPresenter presenter = new TestPresenter();
-    presenter
-        .on(
-            subject.doOnNext(value -> {
-              if (counter.incrementAndGet() == 1) {
-                throw new Exception("buzz");
-              }
-              received.add(value);
-            })
-        )
-        .call(subscriber);
+    presenter.start();
 
     // when
-    subject.onNext("foo"); // throws exception
-    subject.onNext("bar");
+    subject.onNext("foo");
 
     // then
-    verify(subscriber).accept("bar");
-    verifyNoMoreInteractions(subscriber);
-    assertThat(received).containsExactly("bar");
-    uncaughtThrown.expect(Exception.class);
-    uncaughtThrown.expectMessage("buzz");
+    InOrder inOrder = inOrder(consumer);
+    inOrder.verify(consumer).accept("bar3");
+    inOrder.verify(consumer).accept("foo1");
+    inOrder.verify(consumer).accept("foo2");
+    verifyNoMoreInteractions(consumer);
   }
 
-  private static class TestPresenter extends Presenter { /* nothing to override */ }
+  @Test
+  public void start_errorInOnStartAction_shouldFailToStart() throws Exception {
+    // given
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        onStart(() -> { throw new Exception(); });
+      }
+    }
+    TestPresenter presenter = new TestPresenter();
+    thrown.expect(RuntimeException.class);
+    thrown.expectMessage("Could not start presenter");
+
+    // when
+    presenter.start();
+
+    // then should fail
+  }
+
+  @Test
+  public void start_errorWhileObservingEvents_shouldStaySubscribedAndHandleNextEvents() throws Exception {
+    // given
+    PublishSubject<String> subject = PublishSubject.create();
+    class TestPresenter extends Presenter {
+      private TestPresenter() {
+        super(
+          subject
+              .doOnNext(value -> { if (value.equals("error")) { throw new Exception("bar"); } })
+              .doOnNext(consumer)
+        );
+      }
+    }
+    TestPresenter presenter = new TestPresenter();
+    presenter.start();
+    uncaughtThrown.expect(Exception.class);
+    uncaughtThrown.expectMessage("bar");
+
+    // when
+    subject.onNext("error");
+    subject.onNext("foo");
+
+    // then
+    verify(consumer).accept("foo");
+    verifyNoMoreInteractions(consumer);
+  }
 
 }

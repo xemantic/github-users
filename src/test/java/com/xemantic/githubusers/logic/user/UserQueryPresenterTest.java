@@ -24,6 +24,7 @@ package com.xemantic.githubusers.logic.user;
 
 import com.xemantic.ankh.shared.event.Sink;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
+import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import io.reactivex.subjects.PublishSubject;
 import org.junit.Rule;
@@ -35,7 +36,6 @@ import org.mockito.quality.Strictness;
 
 import java.util.List;
 
-import static com.xemantic.ankh.shared.event.Trigger.noTriggers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -58,11 +58,11 @@ public class UserQueryPresenterTest {
   public void start_shouldOnlyBindToView() {
     // given
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
-    given(view.queryInput$()).willReturn(noTriggers());
-    UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
+    given(view.queryInput$()).willReturn(Observable.empty());
+    UserQueryPresenter presenter = new UserQueryPresenter(view, Sink.of(userQuery$));
 
     // when
-    presenter.start(view);
+    presenter.start();
 
     // then
     verify(view).queryInput$();
@@ -76,8 +76,8 @@ public class UserQueryPresenterTest {
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
     PublishSubject<String> userQueryIntent = PublishSubject.create();
     given(view.queryInput$()).willReturn(userQueryIntent);
-    UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
-    presenter.start(view);
+    UserQueryPresenter presenter = new UserQueryPresenter(view, Sink.of(userQuery$));
+    presenter.start();
 
     // when
     userQueryIntent.onNext("foo");
@@ -95,8 +95,8 @@ public class UserQueryPresenterTest {
     TestObserver<UserQueryEvent> userQuery$ = TestObserver.create();
     PublishSubject<String> userQueryIntents = PublishSubject.create();
     given(view.queryInput$()).willReturn(userQueryIntents);
-    UserQueryPresenter presenter = new UserQueryPresenter(Sink.of(userQuery$));
-    presenter.start(view);
+    UserQueryPresenter presenter = new UserQueryPresenter(view, Sink.of(userQuery$));
+    presenter.start();
 
     // when
     userQueryIntents.onNext("foo");

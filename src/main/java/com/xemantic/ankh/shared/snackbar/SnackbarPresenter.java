@@ -35,17 +35,16 @@ import javax.inject.Inject;
  */
 public class SnackbarPresenter extends Presenter {
 
-  private final Observable<SnackbarMessageEvent> snackbarMessage$;
-
   @Inject
-  public SnackbarPresenter(Observable<SnackbarMessageEvent> snackbarMessage$) {
-    this.snackbarMessage$ = snackbarMessage$;
-  }
-
-  public void start(SnackbarView view) {
-    on(snackbarMessage$
-        .map(SnackbarMessageEvent::getMessage)
-    ).call(view::show);
+  public SnackbarPresenter(
+      SnackbarView view,
+      Observable<SnackbarMessageEvent> snackbarMessage$
+  ) {
+    super(
+        snackbarMessage$
+            .map(SnackbarMessageEvent::getMessage)
+            .doOnNext(view::show)
+    );
   }
 
 }

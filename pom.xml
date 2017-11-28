@@ -47,10 +47,16 @@
       <version>2.1.6</version>
     </dependency>
     <dependency>
+      <groupId>com.google.auto.factory</groupId>
+      <artifactId>auto-factory</artifactId>
+      <version>1.0-beta5</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency> <!-- needed by auto-factory, but might be project dependency soon, remember to remove optional -->
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>23.4-jre</version>
-      <scope>test</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

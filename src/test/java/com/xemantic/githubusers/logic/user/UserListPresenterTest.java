@@ -82,16 +82,16 @@ public class UserListPresenterTest {
     // given
     PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> mock(UserView.class),
-        () -> mock(UserPresenter.class),
+        mock(UserPresenterFactory.class),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
 
     // when
-    presenter.start(view);
+    presenter.start();
 
     // then
     verifyNoMoreInteractions(view, userService);
@@ -102,14 +102,14 @@ public class UserListPresenterTest {
     // given
     PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> mock(UserView.class),
-        () -> mock(UserPresenter.class),
+        mock(UserPresenterFactory.class),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
     UserQueryEvent event = new UserQueryEvent(" "); // empty string
 
     // when
@@ -133,18 +133,22 @@ public class UserListPresenterTest {
 
     UserView userView = mock(UserView.class);
     UserPresenter userPresenter = mock(UserPresenter.class);
+    given(userPresenter.getView()).willReturn(userView);
+
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(user)).willReturn(userPresenter);
 
     given(view.loadMoreIntent$()).willReturn(noTriggers());
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        () -> userPresenter,
+        userPresenterFactory,
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     userQuery$.onNext(new UserQueryEvent("foo"));
@@ -157,7 +161,7 @@ public class UserListPresenterTest {
     inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
     inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
-    inOrder.verify(userPresenter).start(user, userView);
+    inOrder.verify(userPresenter).start();
     inOrder.verify(view).add(userView);
     // load more stays disabled as it's the last page of results.
     verifyNoMoreInteractions(view, userService, userPresenter);
@@ -178,18 +182,21 @@ public class UserListPresenterTest {
 
     UserView userView = mock(UserView.class);
     UserPresenter userPresenter = mock(UserPresenter.class);
+    given(userPresenter.getView()).willReturn(userView);
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(user)).willReturn(userPresenter);
 
     given(view.loadMoreIntent$()).willReturn(noTriggers());
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        () -> userPresenter,
+        userPresenterFactory,
         pageSize,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     userQuery$.onNext(new UserQueryEvent("foo"));
@@ -202,7 +209,7 @@ public class UserListPresenterTest {
     inOrder.verify(userService).find("foo", 1, pageSize);
     inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
-    inOrder.verify(userPresenter).start(user, userView);
+    inOrder.verify(userPresenter).start();
     inOrder.verify(view).add(userView);
     inOrder.verify(view).enableLoadMore(true);
     verifyNoMoreInteractions(view, userService, userPresenter);
@@ -232,22 +239,23 @@ public class UserListPresenterTest {
     UserPresenter userPresenter1 = mock(UserPresenter.class);
     UserView userView2 = mock(UserView.class);
     UserPresenter userPresenter2 = mock(UserPresenter.class);
-
-    given(userViewProvider.get()).willReturn(userView1, userView2);
-    given(userPresenterProvider.get()).willReturn(userPresenter1, userPresenter2);
+    given(userPresenter1.getView()).willReturn(userView1);
+    given(userPresenter2.getView()).willReturn(userView2);
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(any())).willReturn(userPresenter1, userPresenter2);
 
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
     given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        userViewProvider,
-        userPresenterProvider,
+        userPresenterFactory,
         pageSize,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
     userQuery$.onNext(new UserQueryEvent("foo"));
 
     // when
@@ -266,12 +274,12 @@ public class UserListPresenterTest {
     inOrder.verify(userService).find("foo", 1, 1);
     inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
-    inOrder.verify(userPresenter1).start(user1, userView1);
+    inOrder.verify(userPresenter1).start();
     inOrder.verify(view).add(userView1);
     inOrder.verify(view).enableLoadMore(true);
     inOrder.verify(view).enableLoadMore(false);
     inOrder.verify(userService).find("foo", 2, 1);
-    inOrder.verify(userPresenter2).start(user2, userView2);
+    inOrder.verify(userPresenter2).start();
     inOrder.verify(view).add(userView2);
     verifyNoMoreInteractions(
         view,
@@ -299,14 +307,14 @@ public class UserListPresenterTest {
     given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        () -> mock(UserPresenter.class),
+        mockUserPresenterFactory(user, userView),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     userQuery$.onNext(new UserQueryEvent("foo"));
@@ -353,10 +361,10 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        () -> mock(UserPresenter.class),
+        mockUserPresenterFactory(user, userView),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
@@ -366,7 +374,7 @@ public class UserListPresenterTest {
     assertThat(response1$.hasObservers()).isFalse();
     assertThat(response2$.hasObservers()).isFalse();
 
-    presenter.start(view);
+    presenter.start();
 
     // intermediate state check
     assertThat(userQuery$.hasObservers()).isTrue();
@@ -437,14 +445,14 @@ public class UserListPresenterTest {
     UserView userView = mock(UserView.class);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        () -> mock(UserPresenter.class),
+        mockUserPresenterFactory(user, userView),
         pageSize,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
     userQuery$.onNext(new UserQueryEvent("foo")); // will generate error in request
 
     // when
@@ -499,16 +507,20 @@ public class UserListPresenterTest {
     given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserView userView = mock(UserView.class);
+    UserPresenter userPresenter = mock(UserPresenter.class);
+    given(userPresenter.getView()).willReturn(userView);
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(any())).willReturn(userPresenter);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        () -> mock(UserPresenter.class),
+        userPresenterFactory,
         pageSize,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
     userQuery$.onNext(new UserQueryEvent("foo")); // will generate error in request
     fire(loadMoreIntent);
 
@@ -552,14 +564,14 @@ public class UserListPresenterTest {
     given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> mock(UserView.class),
-        () -> mock(UserPresenter.class),
+        mock(UserPresenterFactory.class),
         DEFAULT_PAGE_SIZE,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
     userQuery$.onNext(event);
 
     // intermediate check
@@ -603,20 +615,21 @@ public class UserListPresenterTest {
     PublishSubject<Trigger> loadMoreIntent = PublishSubject.create();
     given(view.loadMoreIntent$()).willReturn(loadMoreIntent);
 
-    UserPresenter userPresenter = mock(UserPresenter.class);
-    given(userPresenterProvider.get()).willReturn(userPresenter);
-
     UserView userView = mock(UserView.class);
+    UserPresenter userPresenter = mock(UserPresenter.class);
+    given(userPresenter.getView()).willReturn(userView);
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(any())).willReturn(userPresenter);
 
     UserListPresenter presenter = new UserListPresenter(
+        view,
         userQuery$,
         userService,
-        () -> userView,
-        userPresenterProvider,
+        userPresenterFactory,
         pageSize,
         DEFAULT_USER_SEARCH_LIMIT
     );
-    presenter.start(view);
+    presenter.start();
     userQuery$.onNext(event);
 
     // intermediate check
@@ -635,7 +648,7 @@ public class UserListPresenterTest {
     inOrder.verify(userService).find("foo", 1, pageSize);
     inOrder.verify(view).loadingFirstPage(false);
     inOrder.verify(view).clear();
-    inOrder.verify(userPresenter).start(user, userView);
+    inOrder.verify(userPresenter).start();
     inOrder.verify(view).add(userView);
     inOrder.verify(userPresenter).stop(); // essence of this test - child presenter is stopped as well
     verifyNoMoreInteractions(view, userService, userPresenter);
@@ -643,6 +656,14 @@ public class UserListPresenterTest {
     assertThat(userQuery$.hasObservers()).isFalse();
     assertThat(loadMoreIntent.hasObservers()).isFalse();
     assertThat(request$.hasObservers()).isFalse();
+  }
+
+  private UserPresenterFactory mockUserPresenterFactory(User user, UserView userView) {
+    UserPresenter userPresenter = mock(UserPresenter.class);
+    given(userPresenter.getView()).willReturn(userView);
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(user)).willReturn(userPresenter);
+    return userPresenterFactory;
   }
 
 }

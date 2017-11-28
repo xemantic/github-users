@@ -23,8 +23,8 @@
 package com.xemantic.githubusers.logic.user;
 
 import com.xemantic.ankh.shared.error.Errors;
+import com.xemantic.ankh.shared.event.Trigger;
 import com.xemantic.ankh.shared.presenter.Presenter;
-import com.xemantic.ankh.shared.request.Page;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.model.SearchResult;
 import com.xemantic.githubusers.logic.model.User;
@@ -33,9 +33,9 @@ import io.reactivex.Observable;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Presenter of the {@link UserListView}.
@@ -44,13 +44,9 @@ import java.util.List;
  */
 public class UserListPresenter extends Presenter {
 
-  private final Observable<UserQueryEvent> userQuery$;
+  private final UserListView view;
 
-  private final UserService userService;
-
-  private final Provider<UserView> userViewProvider;
-
-  private final Provider<UserPresenter> userPresenterProvider;
+  private final UserPresenterFactory userPresenterFactory;
 
   private final List<UserPresenter> displayedUserPresenters = new LinkedList<>();
 
@@ -58,38 +54,43 @@ public class UserListPresenter extends Presenter {
 
   private final int gitHubUserSearchLimit;
 
-  private UserListView view;
-
   @Inject
   public UserListPresenter(
+      UserListView view,
       Observable<UserQueryEvent> userQuery$,
       UserService userService,
-      Provider<UserView> userViewProvider,
-      Provider<UserPresenter> userPresenterProvider,
+      UserPresenterFactory userPresenterFactory,
       @Named("userListPageSize") int userListPageSize,
       // "Only the first 1000 search results are available"
       @Named("gitHubUserSearchLimit") int gitHubUserSearchLimit
   ) {
-    this.userQuery$ = userQuery$;
-    this.userService = userService;
-    this.userViewProvider = userViewProvider;
-    this.userPresenterProvider = userPresenterProvider;
+
+    this.view = view;
+    this.userPresenterFactory = userPresenterFactory;
     this.userListPageSize = userListPageSize;
     this.gitHubUserSearchLimit = gitHubUserSearchLimit;
-  }
 
-  /**
-   * Starts and initializes the presenter with given {@code view}.
-   *
-   * @param view the view.
-   */
-  public void start(UserListView view) {
-    this.view = view;
-    on(userQuery$
+    register(userQuery$
         .filter(event -> ! event.getQuery().trim().isEmpty())  // kick out empty queries
         .map(UserQueryEvent::getQuery)
-        .switchMap(this::loadUsers)// will dispose stale subscriptions from previous requests
-    ).call(this::handlePage);
+        .switchMap(query -> { // switchMap will dispose stale subscriptions from previous request
+          AtomicInteger pager = new AtomicInteger(1);
+          return Trigger.oneTime().mergeWith(view.loadMoreIntent$())
+              .doOnNext(trigger -> indicateRequest(pager.get()))
+              .flatMapSingle(trigger ->
+                  userService.find(query, pager.get(), userListPageSize)
+              )
+              .doOnNext(result -> {
+                handlePage(pager.get(), result);
+                pager.incrementAndGet();
+              })
+              .retry(throwable -> { // retry here because of the switchMap, we want to stay on the page
+                cleanViewOnError();
+                Errors.onError(throwable);
+                return true;
+              });
+        })
+    );
   }
 
   @Override
@@ -98,21 +99,9 @@ public class UserListPresenter extends Presenter {
     clearDisplayedUserPresenters();
   }
 
-  private Observable<Page<SearchResult>> loadUsers(String query) {
-    return Page.emitPagesOn(view.loadMoreIntent$())
-        .doOnNext(page -> {
-          view.enableLoadMore(false);
-          if (page == 1) { view.loadingFirstPage(true); }
-        })
-        .flatMapSingle(page ->
-            userService.find(query, page, userListPageSize)
-                .map(result -> new Page<>(page, result))
-        )
-        .retry(throwable -> {
-          cleanViewOnError();
-          Errors.onError(throwable);
-          return true;
-        });
+  private void indicateRequest(int page) {
+    view.enableLoadMore(false);
+    if (page == 1) { view.loadingFirstPage(true); }
   }
 
   private void cleanViewOnError() {
@@ -120,42 +109,43 @@ public class UserListPresenter extends Presenter {
     view.loadingFirstPage(false);
   }
 
-  private void handlePage(Page<SearchResult> page) {
-    if (page.getNumber() == 1) {
+  private void handlePage(int page, SearchResult result) {
+    if (page == 1) {
       view.loadingFirstPage(false);
       view.clear();
       clearDisplayedUserPresenters();
     }
-    page.getPayload()
-        .getItems()
-        .forEach(user -> view.add(newUserView(user)));
-    if (!isLast(page)) {
+    for (User user : result.getItems()) {
+      view.add(newUserView(user));
+    }
+    if (!isLast(page, result)) {
       view.enableLoadMore(true);
     }
   }
 
   private void clearDisplayedUserPresenters() {
-    displayedUserPresenters.forEach(Presenter::stop);
+    for (Presenter presenter : displayedUserPresenters) {
+      presenter.stop();
+    }
     displayedUserPresenters.clear();
   }
 
-  private boolean isLast(Page<SearchResult> page) {
+  private boolean isLast(int page, SearchResult result) {
     int currentCount = (
-        ((page.getNumber() - 1) * userListPageSize)
-            + page.getPayload().getItems().size()
+        ((page - 1) * userListPageSize)
+            + result.getItems().size()
     );
     return (
-        (currentCount >= page.getPayload().getTotalCount()) // there is more
+        (currentCount >= result.getTotalCount()) // there is more
             || (currentCount >= gitHubUserSearchLimit)
     );
   }
 
   private UserView newUserView(User user) {
-    UserView view = userViewProvider.get();
-    UserPresenter presenter = userPresenterProvider.get();
-    presenter.start(user, view);
+    UserPresenter presenter = userPresenterFactory.create(user);
     displayedUserPresenters.add(presenter);
-    return view;
+    presenter.start();
+    return presenter.getView();
   }
 
 }

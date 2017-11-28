@@ -72,7 +72,7 @@ public class TriggerTest {
   @Test
   public void noTriggers_shouldReturnEmptyObservable() {
     // when
-    Observable<Object> observable = Trigger.noTriggers();
+    Observable<Trigger> observable = Trigger.noTriggers();
 
     // then
     assertThat(observable).isNotNull();

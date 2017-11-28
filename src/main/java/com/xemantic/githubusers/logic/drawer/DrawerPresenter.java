@@ -37,32 +37,26 @@ import javax.inject.Named;
  */
 public class DrawerPresenter extends Presenter {
 
-  private final String projectUrl;
-
-  private final Sink<SnackbarMessageEvent> snackbarMessageSink;
-
-  private final UrlOpener urlOpener;
-
   @Inject
   public DrawerPresenter(
+      DrawerView view,
       @Named("projectGitHubUrl") String projectUrl,
       Sink<SnackbarMessageEvent> snackbarMessageSink,
-      UrlOpener urlOpener) {
-
-    this.projectUrl = projectUrl;
-    this.snackbarMessageSink = snackbarMessageSink;
-    this.urlOpener = urlOpener;
-  }
-
-  public void start(DrawerView view) {
-    on(view.openDrawerIntent$()).call(t -> view.openDrawer(true));
-    on(view.readAboutIntent$()).call(t -> snackbarMessageSink.publish(
-        new SnackbarMessageEvent("To be implemented soon"))
-    );
-    on(view.openProjectOnGitHubIntent$())
-        .call(t -> urlOpener.openUrl(projectUrl));
-    on(view.selectLanguageIntent$()).call(t -> snackbarMessageSink.publish(
-        new SnackbarMessageEvent("To be implemented soon"))
+      UrlOpener urlOpener
+  ) {
+    super(
+        view.openDrawerIntent$()
+            .doOnNext(t -> view.openDrawer(true)),
+        view.readAboutIntent$()
+            .doOnNext(t -> snackbarMessageSink.publish(
+                new SnackbarMessageEvent("To be implemented soon")
+            )),
+        view.openProjectOnGitHubIntent$()
+            .doOnNext(t -> urlOpener.openUrl(projectUrl)),
+        view.selectLanguageIntent$()
+            .doOnNext(t -> snackbarMessageSink.publish(
+                new SnackbarMessageEvent("To be implemented soon")
+            ))
     );
   }
 
