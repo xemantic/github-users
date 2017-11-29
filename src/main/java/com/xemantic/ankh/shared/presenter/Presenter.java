@@ -41,9 +41,9 @@ public abstract class Presenter {
 
   private final List<Observable<?>> observables = new LinkedList<>();
 
-  private Action onStart = Functions.EMPTY_ACTION;
+  private final List<Disposable> subscriptions = new LinkedList<>();
 
-  private List<Disposable> subscriptions;
+  private Action onStart = Functions.EMPTY_ACTION;
 
   protected Presenter(Observable<?> ... observables) {
     this.observables.addAll(Arrays.asList(observables));
@@ -58,23 +58,8 @@ public abstract class Presenter {
   }
 
   public void start() {
-    subscriptions = Observable.fromIterable(observables)
-        .map(observable ->
-            observable
-                .retry(throwable -> { // always retry, will cause unconditional resubscription
-                  Errors.onError(throwable);
-                  return true;
-                })
-                .subscribe()
-        )
-        .toList()
-        .blockingGet();
-
-    try {
-      onStart.run();
-    } catch (Exception e) {
-      throw new RuntimeException("Could not start presenter", e);
-    }
+    subscribeObservables();
+    runOnStart();
   }
 
   /**
@@ -89,6 +74,29 @@ public abstract class Presenter {
       subscription.dispose();
     }
     subscriptions.clear();
+  }
+
+  private void subscribeObservables() {
+    for (Observable<?> observable : observables) {
+      subscriptions.add(subscribe(observable));
+    }
+  }
+
+  private void runOnStart() {
+    try {
+      onStart.run();
+    } catch (Exception e) {
+      throw new RuntimeException("Could not start presenter", e);
+    }
+  }
+
+  private static Disposable subscribe(Observable<?> observable) {
+    return observable
+        .retry(throwable -> { // always retry, will cause unconditional resubscription
+          Errors.onError(throwable);
+          return true;
+        })
+        .subscribe();
   }
 
 }
