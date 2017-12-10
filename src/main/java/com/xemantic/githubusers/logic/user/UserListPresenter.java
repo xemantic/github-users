@@ -35,7 +35,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Presenter of the {@link UserListView}.
@@ -44,15 +43,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class UserListPresenter extends Presenter {
 
-  private final UserListView view;
-
   private final UserPresenterFactory userPresenterFactory;
 
-  private final List<UserPresenter> displayedUserPresenters = new LinkedList<>();
-
-  private final int userListPageSize;
-
-  private final int gitHubUserSearchLimit;
+  private final List<UserPresenter> activeUserPresenters = new LinkedList<>();
 
   @Inject
   public UserListPresenter(
@@ -60,90 +53,99 @@ public class UserListPresenter extends Presenter {
       Observable<UserQueryEvent> userQuery$,
       UserService userService,
       UserPresenterFactory userPresenterFactory,
-      @Named("userListPageSize") int userListPageSize,
-      // "Only the first 1000 search results are available"
-      @Named("gitHubUserSearchLimit") int gitHubUserSearchLimit
+      @Named("userListPageSize") int pageSize,
+      // API docs: "Only the first 1000 search results are available"
+      @Named("gitHubUserSearchLimit") int userSearchLimit
   ) {
 
-    this.view = view;
     this.userPresenterFactory = userPresenterFactory;
-    this.userListPageSize = userListPageSize;
-    this.gitHubUserSearchLimit = gitHubUserSearchLimit;
 
-    register(userQuery$
-        .filter(event -> ! event.getQuery().trim().isEmpty())  // kick out empty queries
-        .map(UserQueryEvent::getQuery)
-        .switchMap(query -> { // switchMap will dispose stale subscriptions from previous request
-          AtomicInteger pager = new AtomicInteger(1);
-          return Trigger.oneTime().mergeWith(view.loadMoreIntent$())
-              .doOnNext(trigger -> indicateRequest(pager.get()))
-              .flatMapSingle(trigger ->
-                  userService.find(query, pager.get(), userListPageSize)
-              )
-              .doOnNext(result -> {
-                handlePage(pager.get(), result);
-                pager.incrementAndGet();
-              })
-              .retry(throwable -> { // retry here because of the switchMap, we want to stay on the same page
-                cleanViewOnError();
-                Errors.onError(throwable);
-                return true;
-              });
-        })
+    register(
+        // task: transform stream of search queries into stream of users
+        // the challenge: delayed request paging happens in-between
+        userQuery$
+            .map(UserQueryEvent::getQuery)
+            .filter(query -> !query.trim().isEmpty())  // kick out empty queries
+            .switchMap(query -> {
+                  Observable<Trigger> oneTime = Trigger.oneTime();
+                  return Observable.range(1, Integer.MAX_VALUE) // paging
+                      .concatMap(page ->
+                          oneTime // it will always attempt to populate the first page on start
+                              .mergeWith(view.loadMoreIntent$())
+                              .take(1)
+                              .doOnNext(trigger -> {
+                                view.enableLoadMore(false);
+                                if (page == 1) {
+                                  // users from previous query will be still displayed for a while
+                                  view.loadingFirstPage(true);
+                                }
+                              })
+                              .flatMapSingle(trigger ->
+                                  userService.find(query, page, pageSize)
+                              )
+                              .doOnNext(result -> {
+                                if (hasNext(page, result, pageSize, userSearchLimit)) {
+                                  view.enableLoadMore(true);
+                                }
+                                if (page == 1) {
+                                  clearOnFirstPage(view);
+                                }
+                              })
+                              .retry(throwable -> {
+                                Errors.onError(throwable);
+                                view.enableLoadMore(true);
+                                if (page == 1) {
+                                  clearOnFirstPage(view);
+                                }
+                                return true;
+                              })
+                      );
+                },
+                1 // one page to prefetch
+            )
+            .flatMapIterable(SearchResult::getItems)
+            .doOnNext(user -> view.add(newUserView(user)))
     );
   }
 
   @Override
   public void stop() {
     super.stop();
-    clearDisplayedUserPresenters();
+    clearActiveUserPresenters();
   }
 
-  private void indicateRequest(int page) {
-    view.enableLoadMore(false);
-    if (page == 1) { view.loadingFirstPage(true); }
-  }
-
-  private void cleanViewOnError() {
-    view.enableLoadMore(true);
+  private void clearOnFirstPage(UserListView view) {
     view.loadingFirstPage(false);
+    view.clear();
+    clearActiveUserPresenters();
   }
 
-  private void handlePage(int page, SearchResult result) {
-    if (page == 1) {
-      view.loadingFirstPage(false);
-      view.clear();
-      clearDisplayedUserPresenters();
-    }
-    for (User user : result.getItems()) {
-      view.add(newUserView(user));
-    }
-    if (!isLast(page, result)) {
-      view.enableLoadMore(true);
-    }
-  }
-
-  private void clearDisplayedUserPresenters() {
-    for (Presenter presenter : displayedUserPresenters) {
+  private void clearActiveUserPresenters() {
+    for (Presenter presenter : activeUserPresenters) {
       presenter.stop();
     }
-    displayedUserPresenters.clear();
+    activeUserPresenters.clear();
   }
 
-  private boolean isLast(int page, SearchResult result) {
+  private static boolean hasNext(
+      int page,
+      SearchResult result,
+      int pageSize,
+      int elementLimit
+  ) {
     int currentCount = (
-        ((page - 1) * userListPageSize)
+        ((page - 1) * pageSize)
             + result.getItems().size()
     );
     return (
-        (currentCount >= result.getTotalCount())
-            || (currentCount >= gitHubUserSearchLimit)
+        (currentCount < result.getTotalCount())
+            && (currentCount < elementLimit)
     );
   }
 
   private UserView newUserView(User user) {
     UserPresenter presenter = userPresenterFactory.create(user);
-    displayedUserPresenters.add(presenter);
+    activeUserPresenters.add(presenter);
     presenter.start();
     return presenter.getView();
   }

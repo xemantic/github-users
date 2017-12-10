@@ -38,7 +38,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
-import javax.inject.Provider;
 import java.util.Collections;
 import java.util.stream.IntStream;
 
@@ -71,11 +70,7 @@ public class UserListPresenterTest {
   @Mock
   private UserService userService;
 
-  @Mock
-  private Provider<UserView> userViewProvider;
-
-  @Mock
-  private Provider<UserPresenter> userPresenterProvider;
+  private InOrder inOrder;
 
   @Test
   public void start_noInput_shouldDoNothingWithViewAndServices() {
@@ -94,7 +89,7 @@ public class UserListPresenterTest {
     presenter.start();
 
     // then
-    verifyNoMoreInteractions(view, userService);
+    verifyZeroInteractions(view, userService);
   }
 
   @Test
@@ -116,7 +111,7 @@ public class UserListPresenterTest {
     userQuery$.onNext(event);
 
     // then
-    verifyNoMoreInteractions(view, userService);
+    verifyZeroInteractions(view, userService);
   }
 
   @Test
@@ -154,17 +149,19 @@ public class UserListPresenterTest {
     userQuery$.onNext(new UserQueryEvent("foo"));
 
     // then
-    InOrder inOrder = inOrder(view, userService, userPresenter);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(userPresenter).start();
-    inOrder.verify(view).add(userView);
+    inOrder = inOrder(view, userService, userPresenter);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(userPresenter).start();
+    $(view).add(userView);
+    $(view).loadMoreIntent$();
     // load more stays disabled as it's the last page of results.
     verifyNoMoreInteractions(view, userService, userPresenter);
+    inOrder.verifyNoMoreInteractions();
   }
 
   @Test
@@ -202,21 +199,23 @@ public class UserListPresenterTest {
     userQuery$.onNext(new UserQueryEvent("foo"));
 
     // then
-    InOrder inOrder = inOrder(view, userService, userPresenter);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, pageSize);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(userPresenter).start();
-    inOrder.verify(view).add(userView);
-    inOrder.verify(view).enableLoadMore(true);
+    inOrder = inOrder(view, userService, userPresenter);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, pageSize);
+    $(view).enableLoadMore(true);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(userPresenter).start();
+    $(view).add(userView);
+    $(view).loadMoreIntent$();
     verifyNoMoreInteractions(view, userService, userPresenter);
+    inOrder.verifyNoMoreInteractions();
   }
 
   @Test
-  public void onLoadMore_when1pageIsAlreadyDisplayedAnd2UsersInTotal_shouldRequestAndDisplayNextPageAndDisableLoadMore() throws InterruptedException {
+  public void onLoadMore_when1pageIsAlreadyDisplayedAnd2UsersInTotal_shouldRequestAndDisplayNextPageAndDisableLoadMore() {
     // given
     int pageSize = 1;
     int totalCount = 2;
@@ -262,31 +261,33 @@ public class UserListPresenterTest {
     fire(loadMoreIntent);
 
     // then
-    InOrder inOrder = inOrder(
+    inOrder = inOrder(
         view,
         userService,
         userPresenter1,
         userPresenter2
     );
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, 1);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(userPresenter1).start();
-    inOrder.verify(view).add(userView1);
-    inOrder.verify(view).enableLoadMore(true);
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(userService).find("foo", 2, 1);
-    inOrder.verify(userPresenter2).start();
-    inOrder.verify(view).add(userView2);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, 1);
+    $(view).enableLoadMore(true);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(userPresenter1).start();
+    $(view).add(userView1);
+    $(view).enableLoadMore(false);
+    $(userService).find("foo", 2, 1);
+    $(userPresenter2).start();
+    $(view).add(userView2);
+    $(view).loadMoreIntent$();
     verifyNoMoreInteractions(
         view,
         userService,
         userPresenter1,
         userPresenter2
     );
+    inOrder.verifyNoMoreInteractions();
   }
 
   @Test
@@ -323,7 +324,7 @@ public class UserListPresenterTest {
     // then
     verify(view).loadingFirstPage(true);
     verify(view).loadingFirstPage(false);
-    verify(view).loadMoreIntent$();
+    verify(view, times(11)).loadMoreIntent$();
     verify(view).clear();
     verify(userService, times(10)).find(eq("foo"), anyInt(), eq(DEFAULT_PAGE_SIZE));
     verify(view, times(1000)).add(userView);
@@ -405,24 +406,94 @@ public class UserListPresenterTest {
     assertThat(response1$.hasObservers()).isFalse();
     assertThat(response2$.hasObservers()).isFalse();
 
-    InOrder inOrder = inOrder(view, userService);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("bar", 1, DEFAULT_PAGE_SIZE);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(view).add(userView);
+    inOrder = inOrder(view, userService);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("bar", 1, DEFAULT_PAGE_SIZE);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(view).add(userView);
+    $(view).loadMoreIntent$();
     verifyNoMoreInteractions(view, userService);
+    inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void onUserQueryEvent_whenPageOfAnotherQueryIsDisplayed_shouldClearOldUserViewsAndStopAssociatedPresenters() {
+    // given
+    int totalCount = 1;
+    UserQueryEvent event1 = new UserQueryEvent("foo");
+    UserQueryEvent event2 = new UserQueryEvent("bar");
+    PublishSubject<UserQueryEvent> userQuery$ = PublishSubject.create();
+
+    User user1 = mock(User.class);
+    User user2 = mock(User.class);
+    SearchResult result1 = mock(SearchResult.class);
+    given(result1.getTotalCount()).willReturn(totalCount);
+    given(result1.getItems()).willReturn(Collections.singletonList(user1));
+
+    SearchResult result2 = mock(SearchResult.class);
+    given(result2.getTotalCount()).willReturn(totalCount);
+    given(result2.getItems()).willReturn(Collections.singletonList(user2));
+    given(userService.find(anyString(), anyInt(), anyInt()))
+        .willReturn(Single.just(result1))
+        .willReturn(Single.just(result2));
+
+    given(view.loadMoreIntent$()).willReturn(noTriggers());
+
+    UserView userView1 = mock(UserView.class);
+    UserPresenter userPresenter1 = mock(UserPresenter.class);
+    UserView userView2 = mock(UserView.class);
+    UserPresenter userPresenter2 = mock(UserPresenter.class);
+    given(userPresenter1.getView()).willReturn(userView1);
+    given(userPresenter2.getView()).willReturn(userView2);
+    UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
+    given(userPresenterFactory.create(any())).willReturn(userPresenter1, userPresenter2);
+
+    UserListPresenter presenter = new UserListPresenter(
+        view,
+        userQuery$,
+        userService,
+        userPresenterFactory,
+        DEFAULT_PAGE_SIZE,
+        DEFAULT_USER_SEARCH_LIMIT
+    );
+    presenter.start();
+    userQuery$.onNext(event1);
+
+    // when
+    userQuery$.onNext(event2);
+
+    // then
+    inOrder = inOrder(view, userService, userPresenter1, userPresenter2);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(userPresenter1).start();
+    $(view).add(userView1);
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("bar", 1, DEFAULT_PAGE_SIZE);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(userPresenter1).stop(); // stops the first presenter
+    $(userPresenter2).start();
+    $(view).add(userView2);
+    $(view).loadMoreIntent$();
+    verifyNoMoreInteractions(view, userService, userPresenter1, userPresenter2);
+    inOrder.verifyNoMoreInteractions();
   }
 
   // use case - for example 500 internal server error happens remotely
   @Test
-  public void onErrorIn1StRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() throws Exception {
+  public void onErrorIn1StRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() {
     // given
     @SuppressWarnings("ThrowableNotThrown")
     RuntimeException error = new RuntimeException("bar");
@@ -459,20 +530,23 @@ public class UserListPresenterTest {
     fire(loadMoreIntent);
 
     // then
-    InOrder inOrder = inOrder(view, userService);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, pageSize);
-    inOrder.verify(view).enableLoadMore(true);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, pageSize);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(view).add(userView);
+    inOrder = inOrder(view, userService);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, pageSize);
+    $(view).enableLoadMore(true);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, pageSize);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(view).add(userView);
+    $(view).loadMoreIntent$();
     verifyNoMoreInteractions(view, userService);
+    inOrder.verifyNoMoreInteractions();
 
     uncaughtThrown.expect(RuntimeException.class);
     uncaughtThrown.expectMessage("bar");
@@ -480,7 +554,7 @@ public class UserListPresenterTest {
 
   // use case - for example 403 - GitHub req/minute limit reached reached
   @Test
-  public void onErrorIn3RdRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() throws Exception {
+  public void onErrorIn3RdRequest_errorIsNotRecoverable_shouldTryAgainWhenLoadMoreIsTriggered() {
     // given
     @SuppressWarnings("ThrowableNotThrown")
     RuntimeException error = new RuntimeException("API rate limit exceeded");
@@ -528,24 +602,25 @@ public class UserListPresenterTest {
     fire(loadMoreIntent);
 
     // then
-    InOrder inOrder = inOrder(view, userService);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, pageSize);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(view).add(userView);
-    inOrder.verify(view).enableLoadMore(true);
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(userService).find("foo", 2, pageSize);
-    inOrder.verify(view).enableLoadMore(true);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(userService).find("foo", 2, pageSize);
-    inOrder.verify(view).add(userView);
-    inOrder.verify(view).enableLoadMore(true); // still 3rd page to be shown
+    inOrder = inOrder(view, userService);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, pageSize);
+    $(view).enableLoadMore(true);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(view).add(userView);
+    $(view).enableLoadMore(false);
+    $(userService).find("foo", 2, pageSize);
+    $(view).enableLoadMore(true);
+    $(view).enableLoadMore(false);
+    $(userService).find("foo", 2, pageSize);
+    $(view).enableLoadMore(true); // still 3rd page to be shown
+    $(view).add(userView);
+    $(view).loadMoreIntent$();
     verifyNoMoreInteractions(view, userService);
+    inOrder.verifyNoMoreInteractions();
 
     uncaughtThrown.expect(RuntimeException.class);
     uncaughtThrown.expectMessage("API rate limit exceeded");
@@ -577,18 +652,18 @@ public class UserListPresenterTest {
     // intermediate check
     assertThat(userQuery$.hasObservers()).isTrue();
     assertThat(request$.hasObservers()).isTrue();
-    assertThat(loadMoreIntent.hasObservers()).isTrue();
 
     // when
     presenter.stop();
 
     // then
-    InOrder inOrder = inOrder(view, userService);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
+    inOrder = inOrder(view, userService);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, DEFAULT_PAGE_SIZE);
     verifyNoMoreInteractions(view, userService);
+    inOrder.verifyNoMoreInteractions();
 
     assertThat(userQuery$.hasObservers()).isFalse();
     assertThat(request$.hasObservers()).isFalse();
@@ -596,7 +671,7 @@ public class UserListPresenterTest {
   }
 
   @Test
-  public void stop_afterDisplaying1StPage_shouldUnsubscribeFromEventBusCancelRequestStopAllChilderenPresentersAndUnbindView() {
+  public void stop_afterDisplaying1StPage_shouldUnsubscribeFromEventBusCancelRequestStopAllChildPresentersAndUnbindView() {
     // given
     int totalCount = 1;
     int pageSize = 1;
@@ -641,17 +716,19 @@ public class UserListPresenterTest {
     presenter.stop();
 
     // then
-    InOrder inOrder = inOrder(view, userService, userPresenter);
-    inOrder.verify(view).loadMoreIntent$();
-    inOrder.verify(view).enableLoadMore(false);
-    inOrder.verify(view).loadingFirstPage(true);
-    inOrder.verify(userService).find("foo", 1, pageSize);
-    inOrder.verify(view).loadingFirstPage(false);
-    inOrder.verify(view).clear();
-    inOrder.verify(userPresenter).start();
-    inOrder.verify(view).add(userView);
-    inOrder.verify(userPresenter).stop(); // essence of this test - child presenter is stopped as well
+
+    inOrder = inOrder(view, userService, userPresenter);
+    $(view).loadMoreIntent$();
+    $(view).enableLoadMore(false);
+    $(view).loadingFirstPage(true);
+    $(userService).find("foo", 1, pageSize);
+    $(view).loadingFirstPage(false);
+    $(view).clear();
+    $(userPresenter).start();
+    $(view).add(userView);
+    $(userPresenter).stop(); // essence of this test - child presenter is stopped as well
     verifyNoMoreInteractions(view, userService, userPresenter);
+    inOrder.verifyNoMoreInteractions();
 
     assertThat(userQuery$.hasObservers()).isFalse();
     assertThat(loadMoreIntent.hasObservers()).isFalse();
@@ -664,6 +741,10 @@ public class UserListPresenterTest {
     UserPresenterFactory userPresenterFactory = mock(UserPresenterFactory.class);
     given(userPresenterFactory.create(user)).willReturn(userPresenter);
     return userPresenterFactory;
+  }
+
+  private <T> T $(T mock) {
+    return inOrder.verify(mock);
   }
 
 }
