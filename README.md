@@ -244,8 +244,18 @@ coming with full test coverage and test cases can be transpiled as well to be ru
 the target platform. See example
 [UserPresenterTest](src/test/java/com/xemantic/githubusers/presenter/UserPresenterTest.java).
 
-Note: don not use `inOrder.verifyNoMoreInteractions()`, for some reason
-much more meaningful message comes from `verify(all, the, mocks, again)`
+Note: end your test cases with:
+
+```java
+  InOrder inOrder = inOrder(mock1, mock2);
+  // ...
+  // method verifications
+  // ...
+  verifyNoMoreInteractions(mock1, mock2);
+  inOrder.verifyNoMoreInteractions();
+```
+
+This verification order gives much more convenient error messages.
 
 # User Experience design
 
