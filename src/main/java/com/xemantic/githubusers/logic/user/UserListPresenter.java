@@ -75,28 +75,23 @@ public class UserListPresenter extends Presenter {
                               .take(1)
                               .doOnNext(trigger -> {
                                 view.enableLoadMore(false);
-                                if (page == 1) {
-                                  // users from previous query will be still displayed for a while
-                                  view.loadingFirstPage(true);
-                                }
+                                if (page == 1) view.loadingFirstPage(true);
+                                // On page 1 users from previous query will be still displayed
+                                // until response or errors happens. When loadingFirstPage = true,
+                                // the UserViews of shown users will be disabled (grayed out and
+                                // protected from receiving clicks).
                               })
-                              .flatMapSingle(trigger ->
-                                  userService.find(query, page, pageSize)
-                              )
+                              .flatMapSingle(trigger -> userService.find(query, page, pageSize))
                               .doOnNext(result -> {
                                 if (hasNext(page, result, pageSize, userSearchLimit)) {
                                   view.enableLoadMore(true);
                                 }
-                                if (page == 1) {
-                                  clearOnFirstPage(view);
-                                }
+                                if (page == 1) clearOnFirstPage(view);
                               })
                               .retry(throwable -> {
                                 Errors.onError(throwable);
                                 view.enableLoadMore(true);
-                                if (page == 1) {
-                                  clearOnFirstPage(view);
-                                }
+                                if (page == 1) clearOnFirstPage(view);
                                 return true;
                               })
                       );
