@@ -22,13 +22,16 @@
 
 package com.xemantic.githubusers.logic.event;
 
+import com.xemantic.ankh.shared.event.Event;
+
 import java.util.Objects;
 
 /**
- * Event generated when new user query is requested.
+ * Event published on new user query.
  *
  * @author morisil
  */
+@Event
 public class UserQueryEvent {
 
   private final String query;

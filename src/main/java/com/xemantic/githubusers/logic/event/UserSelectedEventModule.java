@@ -20,27 +20,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.ankh.shared.event;
+package com.xemantic.githubusers.logic.event;
 
-import java.util.Objects;
+import com.xemantic.ankh.shared.event.Sink;
+import dagger.Binds;
+import dagger.Module;
+import dagger.Provides;
+import io.reactivex.Observable;
+import io.reactivex.subjects.PublishSubject;
+
+import javax.inject.Singleton;
 
 /**
- * Event which carries a message to be displayed on the
- * <a href="https://material.io/guidelines/components/snackbars-toasts.html">snackbar</a>.
+ * Defines {@link UserSelectedEvent} channel.
  *
  * @author morisil
  */
-@Event
-public class SnackbarMessageEvent {
+@Module
+public abstract class UserSelectedEventModule {
 
-  private final String message;
-
-  public SnackbarMessageEvent(String message) {
-    this.message = Objects.requireNonNull(message);
+  @Provides
+  @Singleton
+  static PublishSubject<UserSelectedEvent> channel() {
+    return PublishSubject.create();
   }
 
-  public String getMessage() {
-    return message;
+  @Provides
+  @Singleton
+  static Sink<UserSelectedEvent> sink(PublishSubject<UserSelectedEvent> channel) {
+    return channel::onNext;
   }
+
+  @Binds
+  @Singleton
+  abstract Observable<UserSelectedEvent> observable(PublishSubject<UserSelectedEvent> channel);
 
 }

@@ -22,25 +22,36 @@
 
 package com.xemantic.ankh.shared.event;
 
-import java.util.Objects;
+import dagger.Binds;
+import dagger.Module;
+import dagger.Provides;
+import io.reactivex.Observable;
+import io.reactivex.subjects.PublishSubject;
+
+import javax.inject.Singleton;
 
 /**
- * Event which carries a message to be displayed on the
- * <a href="https://material.io/guidelines/components/snackbars-toasts.html">snackbar</a>.
+ * Defines {@link SnackbarMessageEvent} channel.
  *
  * @author morisil
  */
-@Event
-public class SnackbarMessageEvent {
+@Module
+public abstract class SnackbarMessageEventModule {
 
-  private final String message;
-
-  public SnackbarMessageEvent(String message) {
-    this.message = Objects.requireNonNull(message);
+  @Provides
+  @Singleton
+  static PublishSubject<SnackbarMessageEvent> channel() {
+    return PublishSubject.create();
   }
 
-  public String getMessage() {
-    return message;
+  @Provides
+  @Singleton
+  static Sink<SnackbarMessageEvent> sink(PublishSubject<SnackbarMessageEvent> channel) {
+    return channel::onNext;
   }
+
+  @Binds
+  @Singleton
+  abstract Observable<SnackbarMessageEvent> observable(PublishSubject<SnackbarMessageEvent> channel);
 
 }
