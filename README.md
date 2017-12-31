@@ -136,15 +136,12 @@ to typed injections, it is possible to eliminate explicit EventBus completely.
 ```java
 public class FooPresenter {
   
-  private final Sink<BarEvent> barSink;
-  
   @Inject
-  public FooPresenter(Sink<BarEvent> barSink) {
-    this.barSink = barSink;    
-  }
-  
-  public void handleMyAction() {
-    barSink.publish(new BarEvent("bar"));
+  public FooPresenter(FooView view, Sink<BarEvent> barSink) {
+    super(
+      view.click$()
+          .onNext(e -> barSink.publish(new BarEvent("foo")))  
+    );
   }
   
 }
@@ -157,15 +154,11 @@ Note: several `Sink`s of different event types can be injected.
 ```java
 public class BuzzPresenter {
   
-  private final Observable<BarEvent> barEvent$;
-  
   @Inject
-  public BuzzPresenter(Observable<BarEvent> barEvent$) {
-    this.barEvent$ = barEvent$;    
-  }
-  
-  public void start() {
-    barEvent$.subscribe(e -> log(e.getPayload()));
+  public BuzzPresenter(BuzzView view, Observable<BarEvent> barEvent$) {
+    super(
+      barEvent$.onNext(e -> view.display(e.getMessage()))  
+    );
   }
   
 }
