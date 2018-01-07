@@ -57,7 +57,6 @@
       <groupId>com.google.auto.factory</groupId>
       <artifactId>auto-factory</artifactId>
       <version>1.0-beta5</version>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.google.dagger</groupId>
