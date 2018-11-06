@@ -77,13 +77,11 @@ public class DrawerPresenterTest {
     given(view.selectLanguageIntent$()).willReturn(noTriggers());
 
     DrawerPresenter presenter = new DrawerPresenter(
-        "http://foo.com",
-        Sink.of(snackbarMessage$),
-        urlOpener
+        view, "http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
 
     // when
-    presenter.start(view);
+    presenter.start();
 
     // then
     verify(view).openDrawerIntent$();
@@ -105,9 +103,9 @@ public class DrawerPresenterTest {
     given(view.openProjectOnGitHubIntent$()).willReturn(noTriggers());
     given(view.selectLanguageIntent$()).willReturn(noTriggers());
     DrawerPresenter presenter = new DrawerPresenter(
-        "http://foo.com", Sink.of(snackbarMessage$), urlOpener
+        view, "http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     fire(openDrawerIntent);
@@ -133,11 +131,9 @@ public class DrawerPresenterTest {
     given(view.openProjectOnGitHubIntent$()).willReturn(noTriggers());
     given(view.selectLanguageIntent$()).willReturn(noTriggers());
     DrawerPresenter presenter = new DrawerPresenter(
-        "http://foo.com",
-        Sink.of(snackbarMessage$),
-        urlOpener
+        view, "http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     fire(readAboutIntent);
@@ -164,11 +160,9 @@ public class DrawerPresenterTest {
     given(view.openProjectOnGitHubIntent$()).willReturn(openProjectIntent);
     given(view.selectLanguageIntent$()).willReturn(noTriggers());
     DrawerPresenter presenter = new DrawerPresenter(
-        "http://foo.com",
-        Sink.of(snackbarMessage$),
-        urlOpener
+        view,"http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     fire(openProjectIntent);
@@ -193,11 +187,9 @@ public class DrawerPresenterTest {
     given(view.openProjectOnGitHubIntent$()).willReturn(noTriggers());
     given(view.selectLanguageIntent$()).willReturn(selectLanguageIntent);
     DrawerPresenter presenter = new DrawerPresenter(
-        "http://foo.com",
-        Sink.of(snackbarMessage$),
-        urlOpener
+        view,"http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     fire(selectLanguageIntent);
@@ -238,11 +230,9 @@ public class DrawerPresenterTest {
     given(view.openProjectOnGitHubIntent$()).willReturn(openProjectIntents);
     given(view.selectLanguageIntent$()).willReturn(noTriggers());
     DrawerPresenter presenter = new DrawerPresenter(
-        "http://foo.com",
-        Sink.of(snackbarMessage$),
-        urlOpener
+        view, "http://foo.com", Sink.of(snackbarMessage$), urlOpener
     );
-    presenter.start(view);
+    presenter.start();
 
     // when
     fire(openProjectIntents); // first one throws exception

@@ -25,11 +25,12 @@ package com.xemantic.ankh.shared.presenter;
 import com.xemantic.ankh.shared.error.Errors;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Action;
+import io.reactivex.internal.functions.Functions;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Base presenter with shared presenter logic and state.
@@ -38,25 +39,27 @@ import java.util.Objects;
  */
 public abstract class Presenter {
 
+  private final List<Observable<?>> observables = new LinkedList<>();
+
   private final List<Disposable> subscriptions = new LinkedList<>();
 
-  protected <T> CallDefiner<T> on(Observable<T> observable) {
-    Objects.requireNonNull(observable);
-    return consumer ->
-        subscriptions.add(
-            observable
-                .retry(throwable -> { // always retry, will cause unconditional resubscription
-                  Errors.onError(throwable);
-                  return true;
-                })
-                .subscribe(value -> {
-                  try {
-                    consumer.accept(value);
-                  } catch (Exception e) { // prevent unsubscription but handle exception
-                    Errors.onError(e);
-                  }
-                })
-    );
+  private Action onStart = Functions.EMPTY_ACTION;
+
+  protected Presenter(Observable<?> ... observables) {
+    this.observables.addAll(Arrays.asList(observables));
+  }
+
+  protected void register(Observable<?> observable) {
+    observables.add(observable);
+  }
+
+  protected void onStart(Action onStart) {
+    this.onStart = onStart;
+  }
+
+  public void start() {
+    subscribeObservables();
+    runOnStart();
   }
 
   /**
@@ -67,14 +70,33 @@ public abstract class Presenter {
    * {@code Activity} on Android platform.
    */
   public void stop() {
-    subscriptions.forEach(Disposable::dispose);
+    for (Disposable subscription : subscriptions) {
+      subscription.dispose();
+    }
     subscriptions.clear();
   }
 
-  public interface CallDefiner<T> {
+  private void subscribeObservables() {
+    for (Observable<?> observable : observables) {
+      subscriptions.add(subscribe(observable));
+    }
+  }
 
-    void call(Consumer<T> consumer);
+  private void runOnStart() {
+    try {
+      onStart.run();
+    } catch (Exception e) {
+      throw new RuntimeException("Could not start presenter", e);
+    }
+  }
 
+  private static Disposable subscribe(Observable<?> observable) {
+    return observable
+        .retry(throwable -> { // always retry, will cause unconditional resubscription
+          Errors.onError(throwable);
+          return true;
+        })
+        .subscribe();
   }
 
 }

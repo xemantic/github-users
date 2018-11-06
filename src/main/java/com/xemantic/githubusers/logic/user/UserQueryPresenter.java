@@ -35,18 +35,16 @@ import javax.inject.Inject;
  */
 public class UserQueryPresenter extends Presenter {
 
-  private final Sink<UserQueryEvent> userQuerySink;
-
   @Inject
-  public UserQueryPresenter(Sink<UserQueryEvent> userQuerySink) {
-    this.userQuerySink = userQuerySink;
-  }
-
-  public void start(UserQueryView view) {
-    on(view.queryInput$())
-        .call(query ->
+  public UserQueryPresenter(
+      UserQueryView view,
+      Sink<UserQueryEvent> userQuerySink
+  ) {
+    super(
+        view.queryInput$().doOnNext(query ->
             userQuerySink.publish(new UserQueryEvent(query))
-        );
+        )
+    );
   }
 
 }

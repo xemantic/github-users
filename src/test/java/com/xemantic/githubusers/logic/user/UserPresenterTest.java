@@ -61,10 +61,10 @@ public class UserPresenterTest {
     TestObserver<UserSelectedEvent> userSelected$ = TestObserver.create();
     User user = mock(User.class);
     given(view.userSelection$()).willReturn(noTriggers());
-    UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
+    UserPresenter presenter = new UserPresenter(view, Sink.of(userSelected$), user);
 
     // when
-    presenter.start(user, view);
+    presenter.start();
 
     // then
     then(view).should().displayUser(user);
@@ -82,8 +82,8 @@ public class UserPresenterTest {
     PublishSubject<Trigger> userSelectionIntent = PublishSubject.create();
     given(view.userSelection$()).willReturn(userSelectionIntent);
 
-    UserPresenter presenter = new UserPresenter(Sink.of(userSelected$));
-    presenter.start(user, view);
+    UserPresenter presenter = new UserPresenter(view, Sink.of(userSelected$), user);
+    presenter.start();
 
     // when
     fire(userSelectionIntent);

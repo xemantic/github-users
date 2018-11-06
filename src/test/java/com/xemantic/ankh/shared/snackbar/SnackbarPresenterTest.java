@@ -52,10 +52,10 @@ public class SnackbarPresenterTest {
   public void start_noEventPosted_shouldDoNothingWithView() {
     // given
     PublishSubject<SnackbarMessageEvent> snackbarMessage$ = PublishSubject.create();
-    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessage$);
+    SnackbarPresenter presenter = new SnackbarPresenter(view, snackbarMessage$);
 
     // when
-    presenter.start(view);
+    presenter.start();
 
     // then
     verifyZeroInteractions(view);
@@ -66,8 +66,8 @@ public class SnackbarPresenterTest {
     // given
     SnackbarMessageEvent event = new SnackbarMessageEvent("foo");
     PublishSubject<SnackbarMessageEvent> snackbarMessage$ = PublishSubject.create();
-    SnackbarPresenter presenter = new SnackbarPresenter(snackbarMessage$);
-    presenter.start(view);
+    SnackbarPresenter presenter = new SnackbarPresenter(view, snackbarMessage$);
+    presenter.start();
 
     // when
     snackbarMessage$.onNext(event);

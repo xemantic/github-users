@@ -22,13 +22,15 @@
 
 package com.xemantic.githubusers.logic.event;
 
+import com.xemantic.ankh.shared.event.Event;
 import com.xemantic.githubusers.logic.model.User;
 
 import java.util.Objects;
 
 /**
- * Event generated when user is selected.
+ * Event published when a {@link User} is selected.
  */
+@Event
 public class UserSelectedEvent {
 
   private final User user;

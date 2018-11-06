@@ -23,8 +23,8 @@
 package com.xemantic.githubusers.logic.user;
 
 import com.xemantic.ankh.shared.error.Errors;
+import com.xemantic.ankh.shared.event.Trigger;
 import com.xemantic.ankh.shared.presenter.Presenter;
-import com.xemantic.ankh.shared.request.Page;
 import com.xemantic.githubusers.logic.event.UserQueryEvent;
 import com.xemantic.githubusers.logic.model.SearchResult;
 import com.xemantic.githubusers.logic.model.User;
@@ -33,7 +33,6 @@ import io.reactivex.Observable;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Provider;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,118 +43,106 @@ import java.util.List;
  */
 public class UserListPresenter extends Presenter {
 
-  private final Observable<UserQueryEvent> userQuery$;
+  private final UserPresenterFactory userPresenterFactory;
 
-  private final UserService userService;
-
-  private final Provider<UserView> userViewProvider;
-
-  private final Provider<UserPresenter> userPresenterProvider;
-
-  private final List<UserPresenter> displayedUserPresenters = new LinkedList<>();
-
-  private final int userListPageSize;
-
-  private final int gitHubUserSearchLimit;
-
-  private UserListView view;
+  private final List<UserPresenter> activeUserPresenters = new LinkedList<>();
 
   @Inject
   public UserListPresenter(
+      UserListView view,
       Observable<UserQueryEvent> userQuery$,
       UserService userService,
-      Provider<UserView> userViewProvider,
-      Provider<UserPresenter> userPresenterProvider,
-      @Named("userListPageSize") int userListPageSize,
-      // "Only the first 1000 search results are available"
-      @Named("gitHubUserSearchLimit") int gitHubUserSearchLimit
+      UserPresenterFactory userPresenterFactory,
+      @Named("userListPageSize") int pageSize,
+      // API docs: "Only the first 1000 search results are available"
+      @Named("gitHubUserSearchLimit") int userSearchLimit
   ) {
-    this.userQuery$ = userQuery$;
-    this.userService = userService;
-    this.userViewProvider = userViewProvider;
-    this.userPresenterProvider = userPresenterProvider;
-    this.userListPageSize = userListPageSize;
-    this.gitHubUserSearchLimit = gitHubUserSearchLimit;
-  }
 
-  /**
-   * Starts and initializes the presenter with given {@code view}.
-   *
-   * @param view the view.
-   */
-  public void start(UserListView view) {
-    this.view = view;
-    on(userQuery$
-        .filter(event -> ! event.getQuery().trim().isEmpty())  // kick out empty queries
-        .map(UserQueryEvent::getQuery)
-        .switchMap(this::loadUsers)// will dispose stale subscriptions from previous requests
-    ).call(this::handlePage);
+    this.userPresenterFactory = userPresenterFactory;
+
+    register(
+        // task: transform stream of search queries into stream of users
+        // the challenge: delayed request paging happens in-between
+        userQuery$
+            .map(UserQueryEvent::getQuery)
+            .filter(query -> !query.trim().isEmpty())  // kick out empty queries
+            .switchMap(query -> {
+                  Observable<Trigger> oneTime = Trigger.oneTime();
+                  return Observable.range(1, Integer.MAX_VALUE) // paging
+                      .concatMap(page ->
+                          oneTime // it will always attempt to populate the first page on start
+                              .mergeWith(view.loadMoreIntent$())
+                              .take(1)
+                              .doOnNext(trigger -> {
+                                view.enableLoadMore(false);
+                                if (page == 1) view.loadingFirstPage(true);
+                                // On page 1 users from previous query will be still displayed
+                                // until response or errors happens. When loadingFirstPage = true,
+                                // the UserViews of shown users will be disabled (grayed out and
+                                // protected from receiving clicks).
+                              })
+                              .flatMapSingle(trigger -> userService.find(query, page, pageSize))
+                              .doOnNext(result -> {
+                                if (hasNext(page, result, pageSize, userSearchLimit)) {
+                                  view.enableLoadMore(true);
+                                }
+                                if (page == 1) clearOnFirstPage(view);
+                              })
+                              .retry(throwable -> {
+                                Errors.onError(throwable);
+                                view.enableLoadMore(true);
+                                if (page == 1) clearOnFirstPage(view);
+                                return true;
+                              })
+                      );
+                },
+                1 // one page to prefetch
+            )
+            .flatMapIterable(SearchResult::getItems)
+            .doOnNext(user -> view.add(newUserView(user)))
+    );
   }
 
   @Override
   public void stop() {
     super.stop();
-    clearDisplayedUserPresenters();
+    clearActiveUserPresenters();
   }
 
-  private Observable<Page<SearchResult>> loadUsers(String query) {
-    return Page.emitPagesOn(view.loadMoreIntent$())
-        .doOnNext(page -> {
-          view.enableLoadMore(false);
-          if (page == 1) { view.loadingFirstPage(true); }
-        })
-        .flatMapSingle(page ->
-            userService.find(query, page, userListPageSize)
-                .map(result -> new Page<>(page, result))
-        )
-        .retry(throwable -> {
-          cleanViewOnError();
-          Errors.onError(throwable);
-          return true;
-        });
-  }
-
-  private void cleanViewOnError() {
-    view.enableLoadMore(true);
+  private void clearOnFirstPage(UserListView view) {
     view.loadingFirstPage(false);
+    view.clear();
+    clearActiveUserPresenters();
   }
 
-  private void handlePage(Page<SearchResult> page) {
-    if (page.getNumber() == 1) {
-      view.loadingFirstPage(false);
-      view.clear();
-      clearDisplayedUserPresenters();
+  private void clearActiveUserPresenters() {
+    for (Presenter presenter : activeUserPresenters) {
+      presenter.stop();
     }
-    page.getPayload()
-        .getItems()
-        .forEach(user -> view.add(newUserView(user)));
-    if (!isLast(page)) {
-      view.enableLoadMore(true);
-    }
+    activeUserPresenters.clear();
   }
 
-  private void clearDisplayedUserPresenters() {
-    displayedUserPresenters.forEach(Presenter::stop);
-    displayedUserPresenters.clear();
-  }
-
-  private boolean isLast(Page<SearchResult> page) {
+  private static boolean hasNext(
+      int page,
+      SearchResult result,
+      int pageSize,
+      int elementLimit
+  ) {
     int currentCount = (
-        ((page.getNumber() - 1) * userListPageSize)
-            + page.getPayload().getItems().size()
+        ((page - 1) * pageSize)
+            + result.getItems().size()
     );
     return (
-        (currentCount >= page.getPayload().getTotalCount()) // there is more
-            || (currentCount >= gitHubUserSearchLimit)
+        (currentCount < result.getTotalCount())
+            && (currentCount < elementLimit)
     );
   }
 
   private UserView newUserView(User user) {
-    UserView view = userViewProvider.get();
-    UserPresenter presenter = userPresenterProvider.get();
-    presenter.start(user, view);
-    displayedUserPresenters.add(presenter);
-    return view;
+    UserPresenter presenter = userPresenterFactory.create(user);
+    activeUserPresenters.add(presenter);
+    presenter.start();
+    return presenter.getView();
   }
 
 }

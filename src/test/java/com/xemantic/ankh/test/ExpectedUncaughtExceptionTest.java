@@ -23,6 +23,7 @@
 package com.xemantic.ankh.test;
 
 import io.reactivex.Single;
+import io.reactivex.exceptions.CompositeException;
 import io.reactivex.exceptions.OnErrorNotImplementedException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -291,6 +293,7 @@ public class ExpectedUncaughtExceptionTest {
     Statement statement = uncaughtThrown.apply(originalStatement, description);
     thrown.expect(AssertionError.class);
     thrown.expectMessage("Unexpected uncaught exception");
+    thrown.expectCause(instanceOf(CompositeException.class));
 
     // when
     statement.evaluate();

@@ -22,12 +22,12 @@
 
 package com.xemantic.githubusers.logic.user;
 
+import com.google.auto.factory.AutoFactory;
+import com.google.auto.factory.Provided;
 import com.xemantic.ankh.shared.event.Sink;
 import com.xemantic.ankh.shared.presenter.Presenter;
 import com.xemantic.githubusers.logic.event.UserSelectedEvent;
 import com.xemantic.githubusers.logic.model.User;
-
-import javax.inject.Inject;
 
 /**
  * Presenter of the {@link UserView}.
@@ -36,18 +36,25 @@ import javax.inject.Inject;
  */
 public class UserPresenter extends Presenter {
 
-  private final Sink<UserSelectedEvent> userSelectedSink;
+  private final UserView view;
 
-  @Inject
-  public UserPresenter(Sink<UserSelectedEvent> userSelectedSink) {
-    this.userSelectedSink = userSelectedSink;
+  @AutoFactory(allowSubclasses = true) // testable with mockito
+  public UserPresenter(
+      @Provided UserView view,
+      @Provided Sink<UserSelectedEvent> userSelectedSink,
+      User user
+  ) {
+    super(
+        view.userSelection$()
+            .map(trigger -> new UserSelectedEvent(user))
+            .doOnNext(userSelectedSink::publish)
+    );
+    onStart(() -> view.displayUser(user));
+    this.view = view;
   }
 
-  public void start(User user, UserView view) {
-    on(view.userSelection$()
-        .map(trigger -> new UserSelectedEvent(user))
-    ).call(userSelectedSink::publish);
-    view.displayUser(user);
+  public UserView getView() {
+    return view;
   }
 
 }

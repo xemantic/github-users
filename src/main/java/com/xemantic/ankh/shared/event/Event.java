@@ -20,31 +20,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.ankh.shared.snackbar;
+package com.xemantic.ankh.shared.event;
 
-import com.xemantic.ankh.shared.event.SnackbarMessageEvent;
 import com.xemantic.ankh.shared.presenter.Presenter;
+import dagger.Module;
 import io.reactivex.Observable;
 
 import javax.inject.Inject;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Presenter of the {@link SnackbarView}.
+ * Annotates a class representing event.
+ * <p>
+ * When this annotation is processed, it will cause generation of new {@link Module}
+ * defining event channel for specific event type. The channel consists
+ * of typed {@link Sink} (publishing) and {@link Observable} (subscribing).
+ * </p>
+ * <p>
+ * If you want to emit or receive events in your code, just {@link Inject} typed
+ * {@link Sink} or {@link Observable} into your {@link Presenter}.
+ * </p>
+ * <pre>
+ *   &#064;Inject
+ *   public FooPresenter(FooView view, Sink&lt;BarEvent&gt; barSink) {
+ *     super(
+ *       view.click$()
+ *           .onNext(e -> barSink.publish(new BarEvent("payload"))
+ *     );
+ *   }
+ * </pre>
  *
  * @author morisil
  */
-public class SnackbarPresenter extends Presenter {
-
-  @Inject
-  public SnackbarPresenter(
-      SnackbarView view,
-      Observable<SnackbarMessageEvent> snackbarMessage$
-  ) {
-    super(
-        snackbarMessage$
-            .map(SnackbarMessageEvent::getMessage)
-            .doOnNext(view::show)
-    );
-  }
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Event {
 }

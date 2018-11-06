@@ -20,15 +20,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.xemantic.ankh.shared.request;
+package com.xemantic.githubusers.logic.event;
+
+import com.xemantic.ankh.shared.event.Sink;
+import dagger.Binds;
+import dagger.Module;
+import dagger.Provides;
+import io.reactivex.Observable;
+import io.reactivex.subjects.PublishSubject;
+
+import javax.inject.Singleton;
 
 /**
- * Test of the {@link Page}.
+ * Defines {@link UserSelectedEvent} channel.
  *
  * @author morisil
  */
-public class PageTest {
+@Module
+public abstract class UserSelectedEventModule {
 
-  // TODO write missing tests after moving to ankh library
+  @Provides
+  @Singleton
+  static PublishSubject<UserSelectedEvent> channel() {
+    return PublishSubject.create();
+  }
+
+  @Provides
+  @Singleton
+  static Sink<UserSelectedEvent> sink(PublishSubject<UserSelectedEvent> channel) {
+    return channel::onNext;
+  }
+
+  @Binds
+  @Singleton
+  abstract Observable<UserSelectedEvent> observable(PublishSubject<UserSelectedEvent> channel);
 
 }

@@ -26,6 +26,7 @@ import io.reactivex.Observable;
 import io.reactivex.Observer;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Trigger carries no payload but represents a signal.
@@ -45,8 +46,24 @@ public final class Trigger {
     (Objects.requireNonNull(observer)).onNext(Trigger.INSTANCE);
   }
 
-  public static <T> Observable<T> noTriggers() {
+  public static Observable<Trigger> noTriggers() {
     return Observable.empty();
+  }
+
+  /**
+   * Creates {@link Observable} emitting only one {@link Trigger} instance on
+   * creation. For subsequent subscribers it behaves like {@link Observable#empty()}.
+   *
+   * @return the one time firing Observable.
+   */
+  public static Observable<Trigger> oneTime() {
+    AtomicBoolean firstTime = new AtomicBoolean(true);
+    return Observable.create(e -> {
+      if (firstTime.get()) {
+        firstTime.set(false);
+        e.onNext(Trigger.INSTANCE);
+      }
+    });
   }
 
 }
